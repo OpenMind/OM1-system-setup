@@ -4,7 +4,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
-from modules import WiFiManager, StreamMonitor
+from modules import WiFiManager, StreamMonitor, ContainerMonitor
 
 static_folder = os.path.join(os.path.dirname(__file__), 'static')
 app = Flask(__name__, static_folder=static_folder, static_url_path='')
@@ -12,6 +12,7 @@ CORS(app)
 
 wifi_manager = WiFiManager()
 stream_monitor = StreamMonitor()
+container_monitor = ContainerMonitor(stream_monitor=stream_monitor)
 
 
 @app.route('/api/health', methods=['GET'])
@@ -126,6 +127,21 @@ def get_container_status():
         return jsonify({
             'success': True,
             'data': status
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/containers/status', methods=['GET'])
+def get_containers_status():
+    try:
+        containers = container_monitor.get_all_containers_status()
+        return jsonify({
+            'success': True,
+            'data': containers
         })
     except Exception as e:
         return jsonify({

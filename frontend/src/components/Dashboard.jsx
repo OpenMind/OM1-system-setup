@@ -1,31 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import './Dashboard.css';
+import React from 'react';
 import WiFiStatus from './WiFiStatus';
 import StatusPanel from './StatusPanel';
 
 function Dashboard() {
-  const [systemStatus, setSystemStatus] = useState({
-    localAudio: 'unknown',
-    localCamera: 'unknown',
-    localTopGamer: 'unknown',
-    cloudAudio: 'unknown',
-    cloudCamera: 'unknown',
-    cloud: 'unknown',
-    apiConnection: 'unknown',
-    slamMode: 'unknown',
-    navigationMode: 'unknown'
-  });
-
   return (
-    <div className="dashboard">
-      <div className="dashboard-layout">
-        {/* Left Panel - Status */}
-        <div className="left-panel">
-          <StatusPanel status={systemStatus} />
+    <div className="min-h-screen p-5 bg-gray-50">
+      <div className="max-w-7xl mx-auto mb-5">
+        <h1 className="text-3xl font-bold text-gray-800">Orin System Monitor</h1>
+      </div>
+      
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-5 items-start">
+        {/* Left Panel - Container Status */}
+        <div className="flex flex-col">
+          <StatusPanel />
         </div>
 
         {/* Right Panel - WiFi */}
-        <div className="right-panel">
+        <div className="flex flex-col">
           <WiFiStatus />
         </div>
       </div>
