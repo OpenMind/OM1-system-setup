@@ -10,7 +10,7 @@ Run the install script as root:
 
 ```bash
 cd orin-system-setup/WIFI
-sudo bash ./scripts/install.sh
+sudo bash ./scripts/install.sh -n <YOUR_DEVICE_NAME>
 ```
 
 The system will automatically start the hotspot if no internet connection is detected.

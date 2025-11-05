@@ -1,6 +1,11 @@
 #!/bin/bash
 # OM1 WiFi Portal Installation Script
 
+if [ -z "$BASH_VERSION" ]; then
+    echo "This script requires bash. Please run with: bash $0 $*"
+    exit 1
+fi
+
 set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
