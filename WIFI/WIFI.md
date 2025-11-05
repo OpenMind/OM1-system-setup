@@ -6,11 +6,17 @@ WiFi configuration portal with 5GHz hotspot and system monitoring dashboard for 
 
 ### Installation
 
+Setup the hostname first:
+
+```bash
+hostnamectl set-hostname "$NETWORK_NAME"
+```
+
 Run the install script as root:
 
 ```bash
 cd orin-system-setup/WIFI
-sudo bash ./scripts/install.sh -n <YOUR_DEVICE_NAME>
+sudo bash ./scripts/install.sh -n $NETWORK_NAME
 ```
 
 The system will automatically start the hotspot if no internet connection is detected.
