@@ -230,21 +230,6 @@ install_service() {
     log_success "Service installed with network name: $NETWORK_NAME"
 }
 
-configure_dns() {
-    log_info "Configuring DNS (deprecated - using Avahi instead)..."
-
-    # Remove old dnsmasq configuration if it exists
-    local dns_dir="/etc/NetworkManager/dnsmasq-shared.d"
-    local old_dns_config="$dns_dir/dnsmasq-om1.conf"
-
-    if [[ -f "$old_dns_config" ]]; then
-        log_info "Removing old dnsmasq configuration..."
-        rm -f "$old_dns_config"
-    fi
-
-    log_success "DNS configuration cleaned up (using Avahi mDNS instead)"
-}
-
 # Setup logging
 setup_logging() {
     log_info "Setting up logging..."
@@ -321,7 +306,6 @@ main() {
     install_scripts
     configure_hotspot
     install_service
-    configure_dns
     setup_logging
     enable_service
 
