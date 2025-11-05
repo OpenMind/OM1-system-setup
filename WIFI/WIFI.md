@@ -12,6 +12,19 @@ Setup the hostname first:
 hostnamectl set-hostname "$NETWORK_NAME"
 ```
 
+After updating the hostname, reboot the system:
+
+```bash
+sudo reboot
+```
+
+You also might need to re-install chromium to reflect the hostname change:
+
+```bash
+sudo apt uninstall -y chromium-browser
+sudo apt install -y chromium-browser
+```
+
 Run the install script as root:
 
 ```bash
