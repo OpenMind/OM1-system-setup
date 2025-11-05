@@ -8,23 +8,24 @@ readonly HOTSPOT_SSID="${HOTSPOT_SSID:-OM1-Setup}"
 readonly HOTSPOT_PASSWORD="${HOTSPOT_PASSWORD:-openmind123}"
 readonly WIFI_INTERFACE="${WIFI_INTERFACE:-wlP1p1s0}"
 readonly CONNECTION_NAME="OM1-Hotspot"
+readonly NETWORK_NAME="${NETWORK_NAME:-om1-setup}"
 
 validate_config() {
     if [[ $EUID -ne 0 ]]; then
         echo "ERROR: This script must be run as root (use sudo)"
         exit 1
     fi
-    
+
     if [[ -z "$HOTSPOT_SSID" || ${#HOTSPOT_SSID} -gt 32 ]]; then
         echo "ERROR: SSID must be 1-32 characters"
         exit 1
     fi
-    
+
     if [[ -z "$HOTSPOT_PASSWORD" || ${#HOTSPOT_PASSWORD} -lt 8 || ${#HOTSPOT_PASSWORD} -gt 63 ]]; then
         echo "ERROR: Password must be 8-63 characters"
         exit 1
     fi
-    
+
     if ! nmcli device show "$WIFI_INTERFACE" &>/dev/null; then
         echo "ERROR: WiFi interface '$WIFI_INTERFACE' not found"
         echo "Available interfaces:"
@@ -44,7 +45,7 @@ remove_existing_connection() {
 # Create hotspot
 create_hotspot_connection() {
     echo "Creating 5GHz hotspot..."
-    
+
     nmcli connection add \
         type wifi \
         ifname "$WIFI_INTERFACE" \
@@ -58,7 +59,7 @@ create_hotspot_connection() {
         wifi-sec.psk "$HOTSPOT_PASSWORD" \
         wifi.band a \
         wifi.channel 36 &>/dev/null || exit 1
-    
+
     echo "5GHz hotspot configured (Bluetooth compatible)"
 }
 
@@ -67,17 +68,20 @@ display_summary() {
     echo ""
     echo "=== Hotspot Configuration Complete ==="
     echo ""
-    echo "  SSID:       $HOTSPOT_SSID"
-    echo "  Password:   $HOTSPOT_PASSWORD"
-    echo "  Frequency:  5GHz (Channel 36)"
-    echo "  Gateway:    10.42.0.1"
-    echo "  Bluetooth:  Compatible"
+    echo "  SSID:         $HOTSPOT_SSID"
+    echo "  Password:     $HOTSPOT_PASSWORD"
+    echo "  Frequency:    5GHz (Channel 36)"
+    echo "  Gateway:      10.42.0.1"
+    echo "  Local Name:   ${NETWORK_NAME}.local"
+    echo "  Bluetooth:    Compatible"
     echo ""
     echo "Control:"
     echo "  Start:  sudo nmcli connection up $CONNECTION_NAME"
     echo "  Stop:   sudo nmcli connection down $CONNECTION_NAME"
     echo ""
-    echo "Access:  http://om1-setup or http://10.42.0.1"
+    echo "Access:"
+    echo "  http://${NETWORK_NAME}.local"
+    echo "  http://10.42.0.1"
     echo ""
 }
 
@@ -85,12 +89,12 @@ display_summary() {
 main() {
     echo "=== OM1 5GHz Hotspot Setup ==="
     echo ""
-    
+
     validate_config
     remove_existing_connection
     create_hotspot_connection
     display_summary
-    
+
     echo "✓ Setup complete!"
 }
 
