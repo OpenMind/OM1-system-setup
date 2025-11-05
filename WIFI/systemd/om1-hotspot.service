@@ -1,7 +1,8 @@
 [Unit]
 Description=OM1 Hotspot Monitor Service
-After=network-online.target NetworkManager.service
+After=network-online.target NetworkManager.service avahi-daemon.service
 Wants=network-online.target
+Requires=avahi-daemon.service
 
 [Service]
 Type=oneshot
@@ -10,6 +11,7 @@ ExecStart=/usr/local/bin/om1-monitor.sh
 StandardOutput=journal
 StandardError=journal
 Environment="WIFI_INTERFACE=wlP1p1s0"
+Environment="NETWORK_NAME=om1-setup"
 
 # Restart on failure
 Restart=on-failure
