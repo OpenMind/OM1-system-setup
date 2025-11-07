@@ -172,6 +172,8 @@ install_scripts() {
         local source_script="${script_mapping%:*}"
         local target_script="${script_mapping#*:}"
 
+        chmod +x "$SCRIPT_DIR/$source_script"
+
         cat > "/usr/local/bin/${target_script}.sh" << EOF
 #!/bin/bash
 export NETWORK_NAME="$NETWORK_NAME"
