@@ -101,8 +101,8 @@ class WiFiManager:
                 'instructions': [
                     'Hotspot will close automatically',
                     'Your device will be disconnected',
+                    'System will verify connection after 20 seconds',
                     'Check your device WiFi list for connection status',
-                    'If connection fails, hotspot will restart after 1 minute'
                 ]
             }
             
@@ -228,6 +228,16 @@ class WiFiManager:
             if result.returncode != 0:
                 logging.error(f"Direct connection failed: {result.stderr}")
                 # Connection failed, restart hotspot
+                self._handle_connection_failure(ssid)
+                return
+            
+            time.sleep(20)
+            
+            status = self.get_connection_status()
+            if status.get('connected') and status.get('ssid') == ssid:
+                logging.info(f"WiFi connection verified: {ssid}")
+            else:
+                logging.error(f"WiFi connection verification failed for {ssid}")
                 self._handle_connection_failure(ssid)
                 
         except Exception as e:

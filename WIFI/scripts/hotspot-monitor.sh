@@ -111,8 +111,7 @@ main() {
     # Validate prerequisites
     validate_prerequisites
 
-    # Wait 20 seconds before checking connectivity
-    sleep 20
+    sleep 15
 
     # Check internet connectivity
     if check_internet_connectivity; then
