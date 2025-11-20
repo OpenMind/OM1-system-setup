@@ -19,7 +19,7 @@ dependencies = [
 [tool.setuptools.packages.find]
 include = ["OTA*", "WIFI*"]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "ruff>=0.9.3",
     "black>=23.0.0",
