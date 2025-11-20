@@ -4,8 +4,7 @@ import time
 from queue import Empty, Queue
 from typing import Callable, Optional
 
-import websockets
-from websockets.sync.client import connect
+from websockets.sync.client import ClientConnection, connect
 
 
 class WebSocketClient:
@@ -20,7 +19,7 @@ class WebSocketClient:
         self.url = url
         self.running: bool = True
         self.connected: bool = False
-        self.websocket: Optional[websockets.WebSocketClientProtocol] = None
+        self.websocket: Optional[ClientConnection] = None
         self.message_callback: Optional[Callable] = None
         self.message_queue: Queue = Queue()
         self.sender_thread: Optional[threading.Thread] = None
