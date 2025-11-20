@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  ota-updater:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: ota-updater
+    restart: unless-stopped
+    environment:
+      - OM_API_KEY=${OM_API_KEY}
+      - OM_API_KEY_ID=${OM_API_KEY_ID}
+      - OTA_SERVER_URL=${OTA_SERVER_URL:-wss://api.openmind.org/api/v1/ota/updater}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/local/bin/docker-compose:/usr/local/bin/docker-compose:ro
+      - ota_updates:/app/.ota
+    network_mode: host
+    command: python -m OTA.updater.main
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
