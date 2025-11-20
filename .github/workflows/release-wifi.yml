@@ -1,5 +1,8 @@
 name: WIFI Set-Up Portal Release
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: main

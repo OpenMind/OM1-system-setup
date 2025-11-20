@@ -1,0 +1,7 @@
+{
+  "include": ["OTA/**/*.py"],
+  "exclude": [],
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "warning",
+  "pythonVersion": "3.10"
+}
