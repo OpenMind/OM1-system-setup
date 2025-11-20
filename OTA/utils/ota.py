@@ -410,7 +410,14 @@ class BaseOTA:
                 self.send_progress_update(
                     ws_client, "starting_services", "Starting Docker services", 80
                 )
-                up_cmd = ["docker-compose", "-f", temp_compose_file, "up", "-d", "--no-build"]
+                up_cmd = [
+                    "docker-compose",
+                    "-f",
+                    temp_compose_file,
+                    "up",
+                    "-d",
+                    "--no-build",
+                ]
                 up_result = subprocess.run(
                     up_cmd,
                     capture_output=True,
@@ -677,11 +684,20 @@ class BaseOTA:
                         )
                 else:
                     logging.error("Failed to download or verify YAML file from S3")
-                    self.send_progress_update(ws_client, "download_error", "Failed to download or verify YAML file from S3", 0)
+                    self.send_progress_update(
+                        ws_client,
+                        "download_error",
+                        "Failed to download or verify YAML file from S3",
+                        0,
+                    )
 
             except json.JSONDecodeError as e:
                 logging.error(f"Failed to decode JSON message: {e}")
-                self.send_progress_update(ws_client, "decode_error", "Failed to decode message", 0)
+                self.send_progress_update(
+                    ws_client, "decode_error", "Failed to decode message", 0
+                )
         else:
             logging.warning("Received non-string message, ignoring.")
-            self.send_progress_update(ws_client, "error_message", "Failed to decode message", 0)
+            self.send_progress_update(
+                ws_client, "error_message", "Failed to decode message", 0
+            )
