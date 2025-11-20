@@ -90,13 +90,13 @@ const ContainerStatus = () => {
             <span className="section-title">Video Processor</span>
             {getStatusIcon(containersData?.video_processor?.container_status)}
           </div>
-          
+
           <div className="section-content">
             {/* Container Status */}
             <div className="status-item level-1">
               <span className="item-label">Container Status</span>
-              <span className="item-value" style={{ 
-                color: getStatusColor(containersData?.video_processor?.container_status) 
+              <span className="item-value" style={{
+                color: getStatusColor(containersData?.video_processor?.container_status)
               }}>
                 {getStatusText(containersData?.video_processor?.container_status)}
               </span>
@@ -143,13 +143,13 @@ const ContainerStatus = () => {
             <span className="section-title">ROS2 Sensor</span>
             {getStatusIcon(containersData?.ros2_sensor?.container_status)}
           </div>
-          
+
           <div className="section-content">
             {/* Container Status */}
             <div className="status-item level-1">
               <span className="item-label">Container Status</span>
-              <span className="item-value" style={{ 
-                color: getStatusColor(containersData?.ros2_sensor?.container_status) 
+              <span className="item-value" style={{
+                color: getStatusColor(containersData?.ros2_sensor?.container_status)
               }}>
                 {getStatusText(containersData?.ros2_sensor?.container_status)}
               </span>
@@ -180,13 +180,13 @@ const ContainerStatus = () => {
             <span className="section-title">Orchestrator</span>
             {getStatusIcon(containersData?.orchestrator?.container_status)}
           </div>
-          
+
           <div className="section-content">
             {/* Container Status */}
             <div className="status-item level-1">
               <span className="item-label">Container Status</span>
-              <span className="item-value" style={{ 
-                color: getStatusColor(containersData?.orchestrator?.container_status) 
+              <span className="item-value" style={{
+                color: getStatusColor(containersData?.orchestrator?.container_status)
               }}>
                 {getStatusText(containersData?.orchestrator?.container_status)}
               </span>
@@ -207,7 +207,7 @@ const ContainerStatus = () => {
                   <span className="item-label">Charging Status</span>
                   <span className="item-value">
                     {containersData.orchestrator.services.is_charging ? 'Charging' : 'Not Charging'}
-                    {containersData.orchestrator.services.battery_soc !== undefined && 
+                    {containersData.orchestrator.services.battery_soc !== undefined &&
                       ` (${Math.round(containersData.orchestrator.services.battery_soc)}%)`}
                   </span>
                 </div>
