@@ -11,7 +11,7 @@ services:
     environment:
       - OM_API_KEY=${OM_API_KEY}
       - OM_API_KEY_ID=${OM_API_KEY_ID}
-      - OTA_SERVER_URL=${OTA_SERVER_URL:-wss://api.openmind.org/api/v1/ota/agent}
+      - OTA_SERVER_URL=${OTA_SERVER_URL:-wss://api.openmind.org/api/core/ota/agent}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /usr/local/bin/docker-compose:/usr/local/bin/docker-compose:ro
@@ -34,7 +34,7 @@ services:
     environment:
       - OM_API_KEY=${OM_API_KEY}
       - OM_API_KEY_ID=${OM_API_KEY_ID}
-      - OTA_SERVER_URL=${OTA_SERVER_URL:-wss://api.openmind.org/api/v1/ota/updater}
+      - OTA_SERVER_URL=${OTA_SERVER_URL:-wss://api.openmind.org/api/core/ota/updater}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /usr/bin/docker:/usr/local/bin/docker:ro
