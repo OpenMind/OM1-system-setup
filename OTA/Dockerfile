@@ -15,8 +15,9 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 RUN echo '#!/bin/bash' > /entrypoint.sh && \
     echo 'set -e' >> /entrypoint.sh && \
-    echo 'echo "Starting main command..."' >> /entrypoint.sh && \
-    echo 'exec python -m OTA.updater.main' >> /entrypoint.sh && \
+    echo 'echo "Starting OTA..."' >> /entrypoint.sh && \
+    echo 'exec "$@"' >> /entrypoint.sh && \
     chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
+CMD ["python", "-m", "OTA.agent.main"]
