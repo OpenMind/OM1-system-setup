@@ -1,4 +1,7 @@
-name: WIFI Set-Up Portal Release
+name: OTA release
+
+permissions:
+  contents: read
 
 on:
   push:
@@ -30,7 +33,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: openmindagi/om1_monitor
+          images: openmindagi/ota
           tags: |
             type=semver,pattern={{version}},prefix=v
             type=semver,pattern={{major}}.{{minor}},prefix=v
@@ -42,11 +45,11 @@ jobs:
         id: build
         uses: docker/build-push-action@v4
         with:
-          context: ./WIFI
-          file: ./WIFI/Dockerfile
+          context: .
+          file: ./Dockerfile
           platforms: linux/amd64
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=openmindagi/om1_monitor,push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=openmindagi/ota,push-by-digest=true,name-canonical=true,push=true
 
   build-arm64:
     runs-on: ubuntu-22.04-arm
@@ -69,7 +72,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: openmindagi/om1_monitor
+          images: openmindagi/ota
           tags: |
             type=semver,pattern={{version}},prefix=v
             type=semver,pattern={{major}}.{{minor}},prefix=v
@@ -81,11 +84,11 @@ jobs:
         id: build
         uses: docker/build-push-action@v4
         with:
-          context: ./WIFI
-          file: ./WIFI/Dockerfile
+          context: .
+          file: ./Dockerfile
           platforms: linux/arm64
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=openmindagi/om1_monitor,push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=openmindagi/ota,push-by-digest=true,name-canonical=true,push=true
 
   create-manifest:
     runs-on: ubuntu-latest
@@ -109,6 +112,6 @@ jobs:
 
             docker buildx imagetools create \
               --tag $tag \
-              openmindagi/om1_monitor@${{ needs.build-amd64.outputs.image-digest }} \
-              openmindagi/om1_monitor@${{ needs.build-arm64.outputs.image-digest }}
+              openmindagi/ota@${{ needs.build-amd64.outputs.image-digest }} \
+              openmindagi/ota@${{ needs.build-arm64.outputs.image-digest }}
           done

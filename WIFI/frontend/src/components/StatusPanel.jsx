@@ -45,7 +45,7 @@ function StatusPanel() {
   // Reusable container status component
   const ContainerStatus = ({ title, containerData, streams = null, services = null, streamTitle = "Streams" }) => {
     const status = containerData?.container_status;
-    
+
     return (
       <div className="border border-gray-200 rounded-lg overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3.5 bg-gray-50 border-b border-gray-200">
@@ -138,27 +138,27 @@ function StatusPanel() {
     <div className="bg-white rounded-2xl p-10 shadow-sm h-full">
       <h2 className="text-lg font-semibold mb-7 text-gray-900">Container Status</h2>
       <div className="flex flex-col gap-4">
-        <ContainerStatus 
+        <ContainerStatus
           title="Video Processor"
           containerData={containersData?.video_processor}
           streams={containersData?.video_processor?.local_streams}
           streamTitle="Local Streams"
         />
         {containersData?.video_processor?.cloud_streams?.length > 0 && (
-          <ContainerStatus 
+          <ContainerStatus
             title="Video Processor - Cloud"
             containerData={containersData?.video_processor}
             streams={containersData?.video_processor?.cloud_streams}
             streamTitle="Cloud Streams"
           />
         )}
-        <ContainerStatus 
+        <ContainerStatus
           title="ROS2 Sensor"
           containerData={containersData?.ros2_sensor}
           streams={containersData?.ros2_sensor?.local_streams}
           streamTitle="Local Camera Streams"
         />
-        <ContainerStatus 
+        <ContainerStatus
           title="Orchestrator"
           containerData={containersData?.orchestrator}
           services={containersData?.orchestrator?.services}

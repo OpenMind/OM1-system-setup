@@ -42,16 +42,16 @@ function WiFiStatus() {
       });
       return;
     }
-    
+
     setConnecting(true);
     setConnectionResult(null);
-    
+
     try {
       const response = await axios.post(`${API_BASE}/wifi/connect`, {
         ssid: ssid.trim(),
         password: password
       });
-      
+
       // Response from async connection
       if (response.data.status === 'connecting') {
         setConnectionResult({
@@ -59,7 +59,7 @@ function WiFiStatus() {
           message: `Connecting to ${ssid.trim()}...`,
           instructions: ['This will take 15-20 seconds', 'Your device will disconnect from hotspot']
         });
-        
+
         // Reset form after showing result
         setTimeout(resetForm, 8000);
       } else {
@@ -121,8 +121,8 @@ function WiFiStatus() {
           </div>
         </div>
         {!showConnectForm && !connectionResult && (
-          <button 
-            className="px-5 py-2.5 bg-blue-500 text-white border-none rounded-lg font-medium text-sm cursor-pointer transition-all hover:bg-blue-600 flex items-center gap-2" 
+          <button
+            className="px-5 py-2.5 bg-blue-500 text-white border-none rounded-lg font-medium text-sm cursor-pointer transition-all hover:bg-blue-600 flex items-center gap-2"
             onClick={() => setShowConnectForm(true)}
           >
             Connect WiFi
@@ -147,7 +147,7 @@ function WiFiStatus() {
       {showConnectForm && !connectionResult && (
         <div className="flex flex-col gap-4">
           <h3 className="text-base font-semibold text-slate-800">Connect to WiFi Network</h3>
-          
+
           <div className="flex flex-col gap-3">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -178,14 +178,14 @@ function WiFiStatus() {
             </div>
 
             <div className="flex gap-2 mt-2">
-              <button 
+              <button
                 className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 border-none rounded-lg font-medium text-sm cursor-pointer transition-colors hover:bg-slate-200"
                 onClick={resetForm}
                 disabled={connecting}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className="flex-1 px-4 py-2.5 bg-green-600 text-white border-none rounded-lg font-medium text-sm cursor-pointer transition-colors hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 onClick={connectToNetwork}
                 disabled={connecting || !ssid.trim()}
