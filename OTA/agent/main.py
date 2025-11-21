@@ -10,7 +10,9 @@ import requests
 
 from ..utils.ota import BaseOTA
 
-OTA_SERVER_URL = os.getenv("OTA_SERVER_URL", "wss://api.openmind.org/api/core/ota/agent")
+OTA_SERVER_URL = os.getenv(
+    "OTA_SERVER_URL", "wss://api.openmind.org/api/core/ota/agent"
+)
 DOCKER_CONTAINER_STATUS_URL = os.getenv(
     "DOCKER_STATUS_URL", "https://api.openmind.org/api/core/ota/agent/docker"
 )
