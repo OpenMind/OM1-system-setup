@@ -4,7 +4,7 @@ import time
 
 from ..utils.ota import BaseOTA
 
-OTA_SERVER_URL = os.getenv("OTA_SERVER_URL", "wss://api.openmind.org/api/v1/ota/agent")
+OTA_SERVER_URL = os.getenv("OTA_SERVER_URL", "wss://api.openmind.org/api/core/ota/agent")
 OM_API_KEY = os.getenv("OM_API_KEY")
 OM_API_KEY_ID = os.getenv("OM_API_KEY_ID")
 
@@ -32,7 +32,7 @@ def main():
             return ota.ota_process(message, ota.ws_client)
 
         ota.ws_client.register_message_callback(callback_with_client)
-        ota.ws_client.connect()
+        ota.ws_client.start()
 
         while True:
             time.sleep(5)
