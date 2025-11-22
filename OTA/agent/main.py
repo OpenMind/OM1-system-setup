@@ -59,7 +59,7 @@ class AgentOTA(BaseOTA):
         self.start_fetching_container_info()
         self.start_reporting_container_status()
 
-        self.set_ota_process_callback(self._report_container_status)
+        self.set_ota_process_callback(self._report_status_once)
 
     def _fetch_docker_info(self):
         """
@@ -184,34 +184,57 @@ class AgentOTA(BaseOTA):
             logging.error(f"Failed to read local Docker container status: {e}")
             return None
 
-    def _report_container_status(self, message=None):
+    def _send_status_to_server(self, status: dict, context: str = ""):
         """
-        Report the Docker container status to the server periodically.
+        Send container status to the server.
+
+        Parameters
+        ----------
+        status : dict
+            Container status dictionary
+        context : str
+            Context string for logging (e.g., "OTA callback", "periodic")
+        """
+        try:
+            response = requests.post(
+                self.container_status_url,
+                headers={
+                    "x-api-key": self.om_api_key,
+                    "Content-Type": "application/json",
+                },
+                json={"container_status": status},
+                timeout=10,
+            )
+            response.raise_for_status()
+            context_msg = f" ({context})" if context else ""
+            logging.info(
+                f"Successfully reported Docker container status to server{context_msg}"
+            )
+        except Exception as e:
+            context_msg = f" ({context})" if context else ""
+            logging.error(f"Failed to report Docker container status{context_msg}: {e}")
+
+    def _report_status_once(self, message=None):
+        """
+        Report the Docker container status to the server once (for OTA callback use).
 
         Parameters
         ----------
         message : str, optional
             OTA message (unused in this method, but required for callback compatibility)
         """
+        status = self.read_container_status()
+        if status is not None:
+            self._send_status_to_server(status, "OTA callback")
+
+    def _report_status_periodically(self):
+        """
+        Report the Docker container status to the server periodically (for background thread use only).
+        """
         while True:
             status = self.read_container_status()
             if status is not None:
-                try:
-                    response = requests.post(
-                        self.container_status_url,
-                        headers={
-                            "x-api-key": self.om_api_key,
-                            "Content-Type": "application/json",
-                        },
-                        json={"container_status": status},
-                        timeout=10,
-                    )
-                    response.raise_for_status()
-                    logging.info(
-                        "Successfully reported Docker container status to server"
-                    )
-                except Exception as e:
-                    logging.error(f"Failed to report Docker container status: {e}")
+                self._send_status_to_server(status, "periodic")
             time.sleep(5)
 
     def start_reporting_container_status(self):
@@ -223,11 +246,11 @@ class AgentOTA(BaseOTA):
             or not self.container_status_thread.is_alive()
         ):
             self.container_status_thread = threading.Thread(
-                target=self._report_container_status, daemon=True
+                target=self._report_status_periodically, daemon=True
             )
             self.container_status_thread.start()
             logging.info(
-                "Started periodic Docker container status reporting (every 30 seconds)"
+                "Started periodic Docker container status reporting (every 5 seconds)"
             )
             return
 
