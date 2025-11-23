@@ -132,7 +132,8 @@ class AgentOTA(BaseOTA):
                                 "description": self.container_descriptions.get(
                                     container_name, "No description available"
                                 ),
-                                "status": container_info.get("State", "unknown"),
+                                "state": container_info.get("State", "unknown"),
+                                "status": container_info.get("Status", "unknown"),
                                 "image": container_info.get("Image", "unknown"),
                                 "ports": container_info.get("Ports", ""),
                                 "created": container_info.get("CreatedAt", ""),
@@ -152,6 +153,7 @@ class AgentOTA(BaseOTA):
                     "description": self.container_descriptions.get(
                         missing_container, "No description available"
                     ),
+                    "state": "missing",
                     "status": "missing",
                     "image": "unknown",
                     "ports": "",
