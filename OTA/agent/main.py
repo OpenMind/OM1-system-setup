@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import subprocess
 import threading
 import time
@@ -128,6 +129,17 @@ class AgentOTA(BaseOTA):
 
                         if container_name in self.container_descriptions.keys():
                             found_containers.add(container_name)
+
+                            image_sha256 = "unknown"
+                            labels = container_info.get("Labels", "")
+                            if labels:
+                                sha256_match = re.search(
+                                    r"com\.docker\.compose\.image=sha256:([a-f0-9]{64})",
+                                    labels,
+                                )
+                                if sha256_match:
+                                    image_sha256 = sha256_match.group(1)
+
                             container_status[container_name] = {
                                 "description": self.container_descriptions.get(
                                     container_name, "No description available"
@@ -135,6 +147,7 @@ class AgentOTA(BaseOTA):
                                 "state": container_info.get("State", "unknown"),
                                 "status": container_info.get("Status", "unknown"),
                                 "image": container_info.get("Image", "unknown"),
+                                "image_sha256": image_sha256,
                                 "ports": container_info.get("Ports", ""),
                                 "created": container_info.get("CreatedAt", ""),
                                 "command": container_info.get("Command", ""),
@@ -156,6 +169,7 @@ class AgentOTA(BaseOTA):
                     "state": "missing",
                     "status": "missing",
                     "image": "unknown",
+                    "image_sha256": "unknown",
                     "ports": "",
                     "created": "",
                     "command": "",
