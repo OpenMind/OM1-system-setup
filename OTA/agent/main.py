@@ -62,6 +62,54 @@ class AgentOTA(BaseOTA):
 
         self.set_ota_process_callback(self._report_status_once)
 
+    def _get_image_sha256(self, image_name: str) -> str:
+        """
+        Get the actual SHA256 digest of a Docker image.
+
+        Parameters
+        ----------
+        image_name : str
+            The name of the Docker image
+
+        Returns
+        -------
+        str
+            The SHA256 hash of the image, or "unknown" if unable to retrieve
+        """
+        try:
+            cmd = [
+                "docker",
+                "image",
+                "inspect",
+                image_name,
+                "--format",
+                "{{.RepoDigests}}",
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+
+            if result.returncode == 0 and result.stdout.strip():
+                repo_digests = result.stdout.strip()
+                sha256_match = re.search(r"@sha256:([a-f0-9]{64})", repo_digests)
+                if sha256_match:
+                    return sha256_match.group(1)
+
+            id_cmd = ["docker", "image", "inspect", image_name, "--format", "{{.Id}}"]
+            id_result = subprocess.run(
+                id_cmd, capture_output=True, text=True, timeout=10
+            )
+
+            if id_result.returncode == 0 and id_result.stdout.strip():
+                image_id = id_result.stdout.strip()
+                if image_id.startswith("sha256:"):
+                    return image_id[7:]
+                return image_id
+
+            return "unknown"
+
+        except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
+            logging.warning(f"Failed to get SHA256 for image {image_name}: {e}")
+            return "unknown"
+
     def _fetch_docker_info(self):
         """
         Fetch the list of Docker container info from the server.
@@ -130,15 +178,8 @@ class AgentOTA(BaseOTA):
                         if container_name in self.container_descriptions.keys():
                             found_containers.add(container_name)
 
-                            image_sha256 = "unknown"
-                            labels = container_info.get("Labels", "")
-                            if labels:
-                                sha256_match = re.search(
-                                    r"com\.docker\.compose\.image=sha256:([a-f0-9]{64})",
-                                    labels,
-                                )
-                                if sha256_match:
-                                    image_sha256 = sha256_match.group(1)
+                            image_name = container_info.get("Image", "unknown")
+                            image_sha256 = self._get_image_sha256(image_name)
 
                             container_status[container_name] = {
                                 "description": self.container_descriptions.get(
@@ -146,7 +187,7 @@ class AgentOTA(BaseOTA):
                                 ),
                                 "state": container_info.get("State", "unknown"),
                                 "status": container_info.get("Status", "unknown"),
-                                "image": container_info.get("Image", "unknown"),
+                                "image": image_name,
                                 "image_sha256": image_sha256,
                                 "ports": container_info.get("Ports", ""),
                                 "created": container_info.get("CreatedAt", ""),
