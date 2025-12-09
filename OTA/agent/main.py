@@ -52,6 +52,7 @@ class AgentOTA(BaseOTA):
             "om1_video_processor": "OM1 Video Processor container handling video streams",
             "ota_agent": "OM1 OTA Agent container for over-the-air updates",
             "ota_updater": "OM1 OTA Updater container for managing the OTA Agent updates",
+            "qwen30b_quantized": "Qwen 30B quantized model container for local AI processing",
         }
 
         self.container_info_thread: Optional[threading.Thread] = None
