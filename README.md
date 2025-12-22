@@ -1,6 +1,6 @@
-# Orin System Setup
+# Thor System Setup
 
-System configuration and setup tools for OM1 robot on NVIDIA Jetson Orin platform.
+System configuration and setup tools for OM1 robot on NVIDIA Thor platform.
 
 ## Components
 
