@@ -54,6 +54,7 @@ class AgentOTA(BaseOTA):
             "ota_updater": "OM1 OTA Updater container for managing the OTA Agent updates",
             "qwen30b_quantized": "Qwen 30B quantized model container for local AI processing",
             "kokoro_tts": "Kokoro TTS container for text-to-speech functionalities",
+            "riva_speech": "NVIDIA Riva Speech container for advanced speech processing",
         }
 
         self.container_info_thread: Optional[threading.Thread] = None
