@@ -143,10 +143,17 @@ class DockerManager:
                                     )
                                     failed_services.append(container_name)
                             else:
-                                logging.error(
-                                    f"Failed to force stop container {container_name}: {force_stop_result.stderr}"
-                                )
-                                failed_services.append(container_name)
+                                stderr_output = force_stop_result.stderr
+                                if "No such container" in stderr_output:
+                                    logging.info(
+                                        f"Container {container_name} no longer exists, considering as stopped"
+                                    )
+                                    stopped_services.append(container_name)
+                                else:
+                                    logging.error(
+                                        f"Failed to force stop container {container_name}: {stderr_output}"
+                                    )
+                                    failed_services.append(container_name)
                     else:
                         check_stopped_cmd = [
                             "docker",
@@ -181,7 +188,10 @@ class DockerManager:
                                     f"Failed to remove stopped container {container_name}: {remove_result.stderr}"
                                 )
                         else:
-                            logging.info(f"Container {container_name} not found")
+                            logging.info(
+                                f"Container {container_name} not found, considering as already stopped"
+                            )
+                            stopped_services.append(service_name)
 
                 except subprocess.TimeoutExpired:
                     logging.error(f"Timeout stopping service {service_name}")
