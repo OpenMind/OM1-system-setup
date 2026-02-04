@@ -372,7 +372,9 @@ class DockerManager:
                 "output": "\n".join(stdout_lines) if "stdout_lines" in locals() else "",
             }
 
-    def start_docker_services(self, yaml_content: dict) -> dict:
+    def start_docker_services(
+        self, yaml_content: dict, env_file_path: str | None = None
+    ) -> dict:
         """
         Start Docker containers/services based on the update configuration.
 
@@ -380,6 +382,8 @@ class DockerManager:
         ----------
         yaml_content : dict
             The parsed YAML content containing service definitions
+        env_file_path : str, optional
+            Path to env file to use with docker-compose
 
         Returns
         -------
@@ -421,14 +425,10 @@ class DockerManager:
                 self._send_progress_update(
                     "starting_services", "Starting Docker services", 80
                 )
-                up_cmd = [
-                    "docker-compose",
-                    "-f",
-                    temp_compose_file,
-                    "up",
-                    "-d",
-                    "--no-build",
-                ]
+                up_cmd = ["docker-compose", "-f", temp_compose_file]
+                if env_file_path and os.path.exists(env_file_path):
+                    up_cmd.extend(["--env-file", env_file_path])
+                up_cmd.extend(["up", "-d", "--no-build"])
                 up_result = subprocess.run(
                     up_cmd,
                     capture_output=True,
@@ -761,14 +761,18 @@ class DockerManager:
             logging.error(f"Error in unpause_docker_services: {e}")
             return {"success": False, "error": str(e)}
 
-    def restart_docker_services(self, yaml_content: dict) -> dict:
+    def restart_docker_services(
+        self, yaml_content: dict, env_file_path: str | None = None
+    ) -> dict:
         """
-        Restart Docker containers based on the service configuration.
+        Restart Docker containers by stopping and starting them.
 
         Parameters
         ----------
         yaml_content : dict
             The parsed YAML content containing service definitions
+        env_file_path : str, optional
+            Path to env file to use with docker-compose
 
         Returns
         -------
@@ -802,17 +806,27 @@ class DockerManager:
                     )
 
                     if check_result.returncode == 0 and check_result.stdout.strip():
-                        restart_cmd = ["docker", "restart", container_name]
-                        restart_result = subprocess.run(
-                            restart_cmd, capture_output=True, text=True, timeout=60
-                        )
+                        service_yaml_content = {
+                            "services": {service_name: service_config}
+                        }
 
-                        if restart_result.returncode == 0:
+                        stop_result = self.stop_docker_services(service_yaml_content)
+                        if not stop_result.get("success"):
+                            logging.error(
+                                f"Failed to stop {container_name}: {stop_result.get('error')}"
+                            )
+                            failed_services.append(container_name)
+                            continue
+
+                        start_result = self.start_docker_services(
+                            service_yaml_content, env_file_path
+                        )
+                        if start_result.get("success"):
                             logging.info(f"Restarted container: {container_name}")
                             restarted_services.append(container_name)
                         else:
                             logging.error(
-                                f"Failed to restart container {container_name}: {restart_result.stderr}"
+                                f"Failed to start {container_name}: {start_result.get('error')}"
                             )
                             failed_services.append(container_name)
                     else:

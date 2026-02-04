@@ -1,4 +1,5 @@
 import hashlib
+import json
 import logging
 import os
 import tempfile
@@ -236,3 +237,29 @@ class S3FileDownloader:
             )
             os.unlink(local_path)
             return None, None
+
+    def download_and_parse_json(self, url: str) -> Optional[dict]:
+        """
+        Download schema JSON file from S3.
+
+        Parameters
+        ----------
+        url : str
+            URL of the schema JSON file
+        """
+        local_path = self.download_file_from_s3_url(url)
+        if not local_path:
+            return None
+
+        try:
+            with open(local_path, encoding="utf-8") as f:
+                return json.load(f)
+        except json.JSONDecodeError as e:
+            self.logger.error(f"Failed to parse JSON file {local_path}: {e}")
+            return None
+        except Exception as e:
+            self.logger.error(f"Error reading JSON file {local_path}: {e}")
+            return None
+        finally:
+            if os.path.exists(local_path):
+                os.unlink(local_path)

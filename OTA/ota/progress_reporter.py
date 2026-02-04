@@ -68,3 +68,40 @@ class ProgressReporter:
             WebSocket client for sending progress updates
         """
         self.ws_client = ws_client
+
+    def send_env_response(
+        self,
+        service_name: str,
+        variables: list,
+        success: bool,
+        error: str = "",
+    ):
+        """
+        Send environment variable response.
+
+        Parameters
+        ----------
+        service_name : str
+            Name of the service
+        variables : list
+            List of environment variable definitions
+        success : bool
+            Whether the operation was successful
+        error : str
+            Error message if failed
+        """
+        if self.ws_client and self.ws_client.is_connected():
+            response_data = {
+                "type": "env_response",
+                "service_name": service_name,
+                "variables": variables,
+                "success": success,
+                "error": error,
+            }
+            try:
+                self.ws_client.send_message(json.dumps(response_data))
+                logging.info(f"Sent env_response for {service_name}: success={success}")
+            except Exception as e:
+                logging.warning(f"Failed to send env_response: {e}")
+        else:
+            logging.warning("WebSocket not connected")

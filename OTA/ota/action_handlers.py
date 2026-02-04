@@ -136,6 +136,7 @@ class ActionHandlers:
         service_name : str
             The name of the service to start
         """
+        tag = data.get("tag", "latest")
         logging.info(f"Starting service: {service_name}")
         self.progress_reporter.send_progress_update(
             "starting", f"Starting service {service_name}", 10
@@ -158,7 +159,10 @@ class ActionHandlers:
                     self.progress_reporter.send_progress_update("error", error_msg, 10)
                     return
 
-            start_result = self.docker_manager.start_docker_services(yaml_content)  # type: ignore
+            env_file_path = self.file_manager.get_env_file_path(service_name, tag)
+            start_result = self.docker_manager.start_docker_services(
+                yaml_content, env_file_path
+            )
 
             if start_result.get("success"):
                 logging.info(f"Successfully started service: {service_name}")
@@ -286,6 +290,7 @@ class ActionHandlers:
         service_name : str
             The name of the service to restart
         """
+        tag = data.get("tag", "latest")
         logging.info(f"Restarting service: {service_name}")
         self.progress_reporter.send_progress_update(
             "restarting", f"Restarting service {service_name}", 10
@@ -308,7 +313,10 @@ class ActionHandlers:
                     self.progress_reporter.send_progress_update("error", error_msg, 10)
                     return
 
-            restart_result = self.docker_manager.restart_docker_services(yaml_content)  # type: ignore
+            env_file_path = self.file_manager.get_env_file_path(service_name, tag)
+            restart_result = self.docker_manager.restart_docker_services(
+                yaml_content, env_file_path
+            )
 
             if restart_result.get("success"):
                 logging.info(f"Successfully restarted service: {service_name}")
@@ -396,3 +404,103 @@ class ActionHandlers:
             logging.error(error_msg)
             self.progress_reporter.send_progress_update("error", error_msg, 0)
             return False
+
+    def handle_get_env_action(self, data: dict, service_name: str = ""):
+        """
+        Handle get_env action to retrieve environment variables for a service.
+
+        Parameters
+        ----------
+        data : dict
+            The parsed message data
+        service_name : str
+            The name of the service
+        """
+        tag = data.get("tag", "latest")
+        logging.info(f"Getting env variables for {service_name} at {tag}")
+
+        s3_schema_url = f"https://assets.openmind.org/ota/{tag}/schema/env_schema.json"
+
+        try:
+            s3_downloader = S3FileDownloader()
+            schema_content = s3_downloader.download_and_parse_json(s3_schema_url)
+
+            if not schema_content:
+                self.progress_reporter.send_env_response(
+                    service_name=service_name,
+                    variables=[],
+                    success=False,
+                    error="Failed to download schema from S3",
+                )
+                return
+
+            variables = []
+            current_env = self.file_manager.read_env_file(service_name, tag)
+
+            for var_name, var_def in schema_content.items():
+                default_value = var_def.get("default", "")
+                current_value = current_env.get(var_name, default_value)
+                variables.append({
+                    "name": var_name,
+                    "default_value": default_value,
+                    "current_value": current_value,
+                    "description": var_def.get("description", ""),
+                    "options": var_def.get("options", []),
+                })
+
+            self.progress_reporter.send_env_response(
+                service_name=service_name,
+                variables=variables,
+                success=True,
+            )
+            logging.info(f"Sent env_response for {service_name} with {len(variables)} vars")
+
+        except Exception as e:
+            error_msg = f"Failed to get env for {service_name}: {e}"
+            logging.error(error_msg)
+            self.progress_reporter.send_env_response(
+                service_name=service_name,
+                variables=[],
+                success=False,
+                error=str(e),
+            )
+
+    def handle_set_env_action(self, data: dict, service_name: str = ""):
+        """
+        Handle set_env action to update environment variables.
+
+        Parameters
+        ----------
+        data : dict
+            The parsed message data 
+        service_name : str
+            The name of the service
+        """
+        tag = data.get("tag", "latest")
+        variables = data.get("variables", {})
+        logging.info(f"Setting {len(variables)} env vars for {service_name} at {tag}")
+
+        try:
+            result = self.file_manager.write_env_file(service_name, tag, variables)
+
+            self.progress_reporter.send_env_response(
+                service_name=service_name,
+                variables=[],
+                success=result.get("success", False),
+                error=result.get("error", ""),
+            )
+
+            if result.get("success"):
+                logging.info(f"Successfully updated env for {service_name}")
+            else:
+                logging.error(f"Failed to update env: {result.get('error')}")
+
+        except Exception as e:
+            error_msg = f"Failed to set env: {e}"
+            logging.error(error_msg)
+            self.progress_reporter.send_env_response(
+                service_name=service_name,
+                variables=[],
+                success=False,
+                error=str(e),
+            )

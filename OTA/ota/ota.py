@@ -106,8 +106,12 @@ class BaseOTA:
                     self.action_handlers.handle_unpause_action(data, service_name)
                 elif action == "restart":
                     self.action_handlers.handle_restart_action(data, service_name)
+                elif action == "get_env":
+                    self.action_handlers.handle_get_env_action(data, service_name)
+                elif action == "set_env":
+                    self.action_handlers.handle_set_env_action(data, service_name)
                 else:
-                    error_msg = f"Unknown action type: {action}. Supported actions: upgrade, stop, start, pause, unpause, restart"
+                    error_msg = f"Unknown action type: {action}. Supported actions: upgrade, stop, start, pause, unpause, restart, get_env, set_env"
                     logging.error(error_msg)
                     self.progress_reporter.send_progress_update("error", error_msg, 0)
 

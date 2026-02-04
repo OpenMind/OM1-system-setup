@@ -140,3 +140,54 @@ class FileManager:
         except OSError as e:
             logging.warning(f"Failed to clean up file {file_path}: {e}")
             return False
+
+    def get_env_file_path(self, service_name: str, tag: str = "latest") -> str:
+        """
+        Get the env file path
+        """
+        return os.path.join(self.updates_dir, f"{service_name}_{tag}.env")
+
+    def read_env_file(self, service_name: str, tag: str = "latest") -> dict[str, str]:
+        """
+        Read the env file for a service.
+        """
+        env_path = self.get_env_file_path(service_name, tag)
+        if not os.path.exists(env_path):
+            return {}
+
+        env_vars: dict[str, str] = {}
+        with open(env_path) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    env_vars[key] = value
+        return env_vars
+
+    def write_env_file(
+        self, service_name: str, tag: str, variables: dict[str, str]
+    ) -> dict[str, Any]:
+        """
+        Update env file.
+
+        Returns
+        -------
+        dict
+            Result with success status
+        """
+        try:
+            current_env = self.read_env_file(service_name, tag)
+            current_env.update(variables)
+
+            env_path = self.get_env_file_path(service_name, tag)
+            with open(env_path, "w") as f:
+                for key, value in sorted(current_env.items()):
+                    f.write(f"{key}={value}\n")
+
+            logging.info(
+                f"Updated {service_name} env file at {tag} with {len(variables)} variables"
+            )
+            return {"success": True, "env_path": env_path}
+        except Exception as e:
+            logging.error(f"Failed to write env file: {e}")
+            return {"success": False, "error": str(e)}
