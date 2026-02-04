@@ -113,6 +113,41 @@ class AgentOTA(BaseOTA):
             logging.warning(f"Failed to get SHA256 for image {image_name}: {e}")
             return "unknown"
 
+    def _get_container_env_vars(self, container_name: str) -> list[str]:
+        """
+        Get the environment variables of a running Docker container.
+
+        Parameters
+        ----------
+        container_name : str
+            The name of the Docker container
+
+        Returns
+        -------
+        list[str]
+            List of environment variables
+        """
+        try:
+            cmd = [
+                "docker",
+                "inspect",
+                container_name,
+                "--format",
+                "{{json .Config.Env}}",
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+
+            if result.returncode == 0 and result.stdout.strip():
+                env_list = json.loads(result.stdout.strip())
+                if isinstance(env_list, list):
+                    return env_list
+            return []
+        except (subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError) as e:
+            logging.warning(
+                f"Failed to get env vars for container {container_name}: {e}"
+            )
+            return []
+
     def _fetch_docker_info(self):
         """
         Fetch the list of Docker container info from the server.
@@ -184,6 +219,7 @@ class AgentOTA(BaseOTA):
                             image_name = container_info.get("Image", "unknown")
                             image_sha256 = self._get_image_sha256(image_name)
 
+                            env_vars = self._get_container_env_vars(container_name)
                             container_status[container_name] = {
                                 "description": self.container_descriptions.get(
                                     container_name, "No description available"
@@ -197,6 +233,7 @@ class AgentOTA(BaseOTA):
                                 "command": container_info.get("Command", ""),
                                 "id": container_info.get("ID", ""),
                                 "present": True,
+                                "env_variables": env_vars,
                             }
                     except json.JSONDecodeError as e:
                         logging.warning(f"Failed to parse container info: {e}")
@@ -219,6 +256,7 @@ class AgentOTA(BaseOTA):
                     "command": "",
                     "id": "",
                     "present": False,
+                    "env_variables": [],
                 }
                 logging.warning(
                     f"Container '{missing_container}' is missing from local Docker"

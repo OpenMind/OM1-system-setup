@@ -72,7 +72,19 @@ class ActionHandlers:
             )
             logging.info(f"YAML content: {yaml_content}")
 
-            self.apply_ota_update(service_name, yaml_content, local_file_path, tag)
+            env_variables = data.get("env_variables")
+            if env_variables:
+                write_result = self.file_manager.update_env_file(
+                    service_name, tag, env_variables
+                )
+                env_file_path = write_result.get("file_path")
+            else:
+                logging.warning(f"No env_variables provided for {service_name}")
+                env_file_path = None
+
+            self.apply_ota_update(
+                service_name, yaml_content, local_file_path, tag, env_file_path
+            )
 
             self.file_manager.cleanup_temp_file(local_file_path)
         else:
@@ -143,6 +155,7 @@ class ActionHandlers:
 
         try:
             yaml_content = data.get("yaml_content")
+            tag = data.get("tag", "latest")
 
             if not yaml_content:
                 config_result = self.file_manager.load_latest_config(service_name)
@@ -158,7 +171,19 @@ class ActionHandlers:
                     self.progress_reporter.send_progress_update("error", error_msg, 10)
                     return
 
-            start_result = self.docker_manager.start_docker_services(yaml_content)  # type: ignore
+            env_variables = data.get("env_variables")
+            if env_variables:
+                write_result = self.file_manager.update_env_file(
+                    service_name, tag, env_variables
+                )
+                env_file_path = write_result.get("file_path")
+            else:
+                logging.warning(f"No env_variables provided for {service_name}")
+                env_file_path = None
+
+            start_result = self.docker_manager.start_docker_services(
+                yaml_content, env_file_path
+            )
 
             if start_result.get("success"):
                 logging.info(f"Successfully started service: {service_name}")
@@ -331,6 +356,7 @@ class ActionHandlers:
         yaml_content: dict,
         temp_yaml_path: str,
         tag: str,
+        env_file_path: str | None = None,
     ):
         """
         Apply the OTA update based on the YAML content.
@@ -345,6 +371,8 @@ class ActionHandlers:
             The temporary path of the downloaded YAML file
         tag : str
             The update tag/version
+        env_file_path : str | None
+            Optional path to environment file for variable injection
         """
         logging.info(f"Applying OTA update {tag} with content: {yaml_content}")
 
@@ -378,7 +406,9 @@ class ActionHandlers:
                 return False
 
             logging.info("Starting updated Docker services...")
-            start_result = self.docker_manager.start_docker_services(yaml_content)
+            start_result = self.docker_manager.start_docker_services(
+                yaml_content, env_file_path
+            )
             if not start_result.get("success"):
                 error_msg = f"Failed to start Docker services: {start_result.get('error', 'Unknown error')}"
                 logging.error(error_msg)

@@ -372,7 +372,9 @@ class DockerManager:
                 "output": "\n".join(stdout_lines) if "stdout_lines" in locals() else "",
             }
 
-    def start_docker_services(self, yaml_content: dict) -> dict:
+    def start_docker_services(
+        self, yaml_content: dict, env_file_path: str | None = None
+    ) -> dict:
         """
         Start Docker containers/services based on the update configuration.
 
@@ -380,6 +382,8 @@ class DockerManager:
         ----------
         yaml_content : dict
             The parsed YAML content containing service definitions
+        env_file_path : str | None
+            Optional path to environment file for variable injection
 
         Returns
         -------
@@ -425,10 +429,14 @@ class DockerManager:
                     "docker-compose",
                     "-f",
                     temp_compose_file,
+                ]
+                if env_file_path:
+                    up_cmd.extend(["--env-file", env_file_path])
+                up_cmd.extend([
                     "up",
                     "-d",
                     "--no-build",
-                ]
+                ])
                 up_result = subprocess.run(
                     up_cmd,
                     capture_output=True,
