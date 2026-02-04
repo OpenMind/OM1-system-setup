@@ -432,11 +432,13 @@ class DockerManager:
                 ]
                 if env_file_path:
                     up_cmd.extend(["--env-file", env_file_path])
-                up_cmd.extend([
-                    "up",
-                    "-d",
-                    "--no-build",
-                ])
+                up_cmd.extend(
+                    [
+                        "up",
+                        "-d",
+                        "--no-build",
+                    ]
+                )
                 up_result = subprocess.run(
                     up_cmd,
                     capture_output=True,

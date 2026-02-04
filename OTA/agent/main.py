@@ -142,7 +142,11 @@ class AgentOTA(BaseOTA):
                 if isinstance(env_list, list):
                     return env_list
             return []
-        except (subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError) as e:
+        except (
+            subprocess.TimeoutExpired,
+            FileNotFoundError,
+            json.JSONDecodeError,
+        ) as e:
             logging.warning(
                 f"Failed to get env vars for container {container_name}: {e}"
             )

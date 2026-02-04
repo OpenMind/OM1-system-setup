@@ -182,7 +182,7 @@ class ActionHandlers:
                 env_file_path = None
 
             start_result = self.docker_manager.start_docker_services(
-                yaml_content, env_file_path
+                yaml_content, env_file_path  # type: ignore
             )
 
             if start_result.get("success"):
