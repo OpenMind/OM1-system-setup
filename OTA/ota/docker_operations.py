@@ -765,7 +765,7 @@ class DockerManager:
         self, yaml_content: dict, env_file_path: str | None = None
     ) -> dict:
         """
-        Restart Docker containers by stopping and starting them.
+        Restart Docker containers based on the service configuration.
 
         Parameters
         ----------
@@ -826,7 +826,7 @@ class DockerManager:
                             restarted_services.append(container_name)
                         else:
                             logging.error(
-                                f"Failed to start {container_name}: {start_result.get('error')}"
+                                f"Failed to restart container {container_name}: {start_result.get('error')}"
                             )
                             failed_services.append(container_name)
                     else:

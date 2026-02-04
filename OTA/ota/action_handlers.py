@@ -440,20 +440,24 @@ class ActionHandlers:
             for var_name, var_def in schema_content.items():
                 default_value = var_def.get("default", "")
                 current_value = current_env.get(var_name, default_value)
-                variables.append({
-                    "name": var_name,
-                    "default_value": default_value,
-                    "current_value": current_value,
-                    "description": var_def.get("description", ""),
-                    "options": var_def.get("options", []),
-                })
+                variables.append(
+                    {
+                        "name": var_name,
+                        "default_value": default_value,
+                        "current_value": current_value,
+                        "description": var_def.get("description", ""),
+                        "options": var_def.get("options", []),
+                    }
+                )
 
             self.progress_reporter.send_env_response(
                 service_name=service_name,
                 variables=variables,
                 success=True,
             )
-            logging.info(f"Sent env_response for {service_name} with {len(variables)} vars")
+            logging.info(
+                f"Sent env_response for {service_name} with {len(variables)} vars"
+            )
 
         except Exception as e:
             error_msg = f"Failed to get env for {service_name}: {e}"
@@ -472,7 +476,7 @@ class ActionHandlers:
         Parameters
         ----------
         data : dict
-            The parsed message data 
+            The parsed message data
         service_name : str
             The name of the service
         """
