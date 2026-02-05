@@ -120,8 +120,10 @@ class AgentOTA(BaseOTA):
         """
         Filter environment variables by schema keys.
         """
+        tag = image_name.split(":")[-1] if ":" in image_name else "latest"
+
         s3_downloader = S3FileDownloader()
-        schema_env_keys = s3_downloader.get_schema_env_keys(image_name)
+        schema_env_keys = s3_downloader.get_schema_env_keys(tag, image_name)
 
         result: dict[str, str] = {}
         for env in env_list:

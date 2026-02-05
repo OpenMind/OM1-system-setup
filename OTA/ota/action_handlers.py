@@ -72,7 +72,7 @@ class ActionHandlers:
             )
             logging.info(f"YAML content: {yaml_content}")
 
-            s3_downloader.download_schema()
+            s3_downloader.download_schema(tag)
             env_variables = data.get("env_variables")
             if env_variables is None:
                 env_variables = s3_downloader.get_default_env(service_name, tag)
@@ -166,7 +166,7 @@ class ActionHandlers:
 
             tag = self._extract_tag_from_yaml(yaml_content)  # type: ignore
             s3_downloader = S3FileDownloader()
-            s3_downloader.download_schema()
+            s3_downloader.download_schema(tag)
             env_variables = data.get("env_variables")
             if env_variables is None:
                 env_variables = s3_downloader.get_default_env(service_name, tag)
