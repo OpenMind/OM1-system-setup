@@ -20,6 +20,7 @@ class S3FileDownloader:
     def __init__(self, updates_dir=".ota"):
         self.logger = logging.getLogger(__name__)
         self.updates_dir = os.path.abspath(updates_dir)
+        os.makedirs(self.updates_dir, mode=0o755, exist_ok=True)
         try:
             self.s3_client = boto3.client("s3")
         except Exception as e:
@@ -245,7 +246,6 @@ class S3FileDownloader:
         """
         Download schema JSON from S3 and save to local cache.
         """
-        os.makedirs(self.updates_dir, exist_ok=True)
         schema_url = SCHEMA_URL_TEMPLATE.format(tag=tag)
         cache_path = os.path.join(self.updates_dir, f"{tag}_schema.json")
 
