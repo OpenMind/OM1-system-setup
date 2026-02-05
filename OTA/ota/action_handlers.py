@@ -78,9 +78,7 @@ class ActionHandlers:
                 env_variables = s3_downloader.get_default_env(service_name, tag)
             self.file_manager.update_env_file(service_name, tag, env_variables)
 
-            self.apply_ota_update(
-                service_name, yaml_content, local_file_path, tag
-            )
+            self.apply_ota_update(service_name, yaml_content, local_file_path, tag)
 
             self.file_manager.cleanup_temp_file(local_file_path)
         else:

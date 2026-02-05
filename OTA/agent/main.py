@@ -243,7 +243,9 @@ class AgentOTA(BaseOTA):
 
                             image_name = container_info.get("Image", "unknown")
                             image_sha256 = self._get_image_sha256(image_name)
-                            env_vars = self._get_container_env_vars(container_name, image_name)
+                            env_vars = self._get_container_env_vars(
+                                container_name, image_name
+                            )
                             container_status[container_name] = {
                                 "description": self.container_descriptions.get(
                                     container_name, "No description available"

@@ -2,7 +2,6 @@ import hashlib
 import json
 import logging
 import os
-import shutil
 import tempfile
 from typing import Optional, Tuple
 from urllib.parse import urlparse
@@ -14,6 +13,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 
 SCHEMA_URL = "https://assets.openmind.org/ota/schema/service_schema.json"
 SCHEMA_CACHE_PATH = os.path.join(os.path.expanduser("~"), ".ota", "service_schema.json")
+
 
 class S3FileDownloader:
     """Utility class for downloading files from S3 and verifying checksums."""
@@ -271,7 +271,9 @@ class S3FileDownloader:
                 schema = json.load(f)
             env = schema.get(tag, {}).get(service_name, {}).get("env", {})
             if env:
-                self.logger.info(f"Using schema defaults for {service_name}/{tag}: {env}")
+                self.logger.info(
+                    f"Using schema defaults for {service_name}/{tag}: {env}"
+                )
             return env
         except Exception as e:
             self.logger.error(f"Failed to read schema cache: {e}")
