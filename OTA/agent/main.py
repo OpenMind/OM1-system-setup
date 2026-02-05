@@ -125,8 +125,6 @@ class AgentOTA(BaseOTA):
 
         result: dict[str, str] = {}
         for env in env_list:
-            if "=" not in env:
-                continue
             key, value = env.split("=", 1)
             if key in schema_env_keys:
                 result[key] = value
