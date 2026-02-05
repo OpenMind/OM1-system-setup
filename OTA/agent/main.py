@@ -10,6 +10,7 @@ from typing import Optional
 import requests
 
 from ..ota import BaseOTA
+from ..utils.s3_utils import S3FileDownloader
 
 OTA_AGENT_SERVER_URL = os.getenv(
     "OTA_AGENT_SERVER_URL", "wss://api.openmind.org/api/core/ota/agent"
@@ -113,19 +114,39 @@ class AgentOTA(BaseOTA):
             logging.warning(f"Failed to get SHA256 for image {image_name}: {e}")
             return "unknown"
 
-    def _get_container_env_vars(self, container_name: str) -> list[str]:
+    def _filter_env_by_schema(
+        self, env_list: list[str], image_name: str
+    ) -> dict[str, str]:
         """
-        Get the environment variables of a running Docker container.
+        Filter environment variables by schema keys.
+        """
+        s3_downloader = S3FileDownloader()
+        schema_env_keys = s3_downloader.get_schema_env_keys(image_name)
+        return {
+            k: v
+            for env in env_list
+            if "=" in env
+            for k, v in [env.split("=", 1)]
+            if k in schema_env_keys
+        }
+
+    def _get_container_env_vars(
+        self, container_name: str, image_name: str
+    ) -> dict[str, str]:
+        """
+        Get filtered environment variables of a running Docker container.
 
         Parameters
         ----------
         container_name : str
             The name of the Docker container
+        image_name : str
+            The name of the Docker image
 
         Returns
         -------
-        list[str]
-            List of environment variables
+        dict[str, str]
+            Dictionary of environment variables
         """
         try:
             cmd = [
@@ -140,8 +161,8 @@ class AgentOTA(BaseOTA):
             if result.returncode == 0 and result.stdout.strip():
                 env_list = json.loads(result.stdout.strip())
                 if isinstance(env_list, list):
-                    return env_list
-            return []
+                    return self._filter_env_by_schema(env_list, image_name)
+            return {}
         except (
             subprocess.TimeoutExpired,
             FileNotFoundError,
@@ -150,7 +171,7 @@ class AgentOTA(BaseOTA):
             logging.warning(
                 f"Failed to get env vars for container {container_name}: {e}"
             )
-            return []
+            return {}
 
     def _fetch_docker_info(self):
         """
@@ -222,8 +243,7 @@ class AgentOTA(BaseOTA):
 
                             image_name = container_info.get("Image", "unknown")
                             image_sha256 = self._get_image_sha256(image_name)
-
-                            env_vars = self._get_container_env_vars(container_name)
+                            env_vars = self._get_container_env_vars(container_name, image_name)
                             container_status[container_name] = {
                                 "description": self.container_descriptions.get(
                                     container_name, "No description available"

@@ -72,18 +72,14 @@ class ActionHandlers:
             )
             logging.info(f"YAML content: {yaml_content}")
 
+            s3_downloader.download_schema()
             env_variables = data.get("env_variables")
-            if env_variables:
-                write_result = self.file_manager.update_env_file(
-                    service_name, tag, env_variables
-                )
-                env_file_path = write_result.get("file_path")
-            else:
-                logging.warning(f"No env_variables provided for {service_name}")
-                env_file_path = None
+            if env_variables is None:
+                env_variables = s3_downloader.get_default_env(service_name, tag)
+            self.file_manager.update_env_file(service_name, tag, env_variables)
 
             self.apply_ota_update(
-                service_name, yaml_content, local_file_path, tag, env_file_path
+                service_name, yaml_content, local_file_path, tag
             )
 
             self.file_manager.cleanup_temp_file(local_file_path)
@@ -155,7 +151,6 @@ class ActionHandlers:
 
         try:
             yaml_content = data.get("yaml_content")
-            tag = data.get("tag", "latest")
 
             if not yaml_content:
                 config_result = self.file_manager.load_latest_config(service_name)
@@ -171,19 +166,15 @@ class ActionHandlers:
                     self.progress_reporter.send_progress_update("error", error_msg, 10)
                     return
 
+            tag = self._extract_tag_from_yaml(yaml_content)
+            s3_downloader = S3FileDownloader()
+            s3_downloader.download_schema()
             env_variables = data.get("env_variables")
-            if env_variables:
-                write_result = self.file_manager.update_env_file(
-                    service_name, tag, env_variables
-                )
-                env_file_path = write_result.get("file_path")
-            else:
-                logging.warning(f"No env_variables provided for {service_name}")
-                env_file_path = None
+            if env_variables is None:
+                env_variables = s3_downloader.get_default_env(service_name, tag)
+            self.file_manager.update_env_file(service_name, tag, env_variables)
 
-            start_result = self.docker_manager.start_docker_services(
-                yaml_content, env_file_path  # type: ignore
-            )
+            start_result = self.docker_manager.start_docker_services(yaml_content)
 
             if start_result.get("success"):
                 logging.info(f"Successfully started service: {service_name}")
@@ -356,7 +347,6 @@ class ActionHandlers:
         yaml_content: dict,
         temp_yaml_path: str,
         tag: str,
-        env_file_path: str | None = None,
     ):
         """
         Apply the OTA update based on the YAML content.
@@ -371,8 +361,6 @@ class ActionHandlers:
             The temporary path of the downloaded YAML file
         tag : str
             The update tag/version
-        env_file_path : str | None
-            Optional path to environment file for variable injection
         """
         logging.info(f"Applying OTA update {tag} with content: {yaml_content}")
 
@@ -406,9 +394,7 @@ class ActionHandlers:
                 return False
 
             logging.info("Starting updated Docker services...")
-            start_result = self.docker_manager.start_docker_services(
-                yaml_content, env_file_path
-            )
+            start_result = self.docker_manager.start_docker_services(yaml_content)
             if not start_result.get("success"):
                 error_msg = f"Failed to start Docker services: {start_result.get('error', 'Unknown error')}"
                 logging.error(error_msg)
@@ -426,3 +412,17 @@ class ActionHandlers:
             logging.error(error_msg)
             self.progress_reporter.send_progress_update("error", error_msg, 0)
             return False
+
+    def _extract_tag_from_yaml(self, yaml_content: dict) -> str:
+        """
+        Extract tag from the image name in yaml_content.
+        """
+        try:
+            services = yaml_content.get("services", {})
+            service = next(iter(services.values()), {})
+            image = service.get("image", "")
+            if ":" in image:
+                return image.split(":")[-1]
+            return "latest"
+        except Exception:
+            return "latest"

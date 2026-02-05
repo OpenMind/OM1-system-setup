@@ -141,68 +141,13 @@ class FileManager:
             logging.warning(f"Failed to clean up file {file_path}: {e}")
             return False
 
-    def get_env_file_path(self, service_name: str, tag: str) -> str:
-        """
-        Get the path to the environment file for a service.
-        """
-        return os.path.join(self.updates_dir, f"{service_name}_{tag}.env")
-
-    def load_env_file(self, service_name: str, tag: str) -> dict[str, str]:
-        """
-        Read environment variables from a service's env file.
-
-        Parameters
-        ----------
-        service_name : str
-            The name of the service
-        tag : str
-            The version tag
-
-        Returns
-        -------
-        dict[str, str]
-            Dictionary of environment variable key-value pairs
-        """
-        env_file_path = self.get_env_file_path(service_name, tag)
-        env_vars: dict[str, str] = {}
-
-        if not os.path.exists(env_file_path):
-            return env_vars
-
-        try:
-            with open(env_file_path, "r") as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith("#") and "=" in line:
-                        key, _, value = line.partition("=")
-                        env_vars[key.strip()] = value.strip()
-            logging.info(f"Read env file: {env_file_path}")
-            return env_vars
-        except Exception as e:
-            logging.error(f"Failed to read env file {env_file_path}: {e}")
-            return env_vars
-
     def update_env_file(
         self, service_name: str, tag: str, variables: dict[str, str]
     ) -> dict[str, Any]:
         """
-        Write environment variables to a service's env file
-
-        Parameters
-        ----------
-        service_name : str
-            The name of the service
-        tag : str
-            The version tag
-        variables : dict[str, str]
-            Dictionary of environment variable key-value pairs
-
-        Returns
-        -------
-        dict
-            Result with success status and file path or error
+        Update environment variables to a service's env file.
         """
-        env_file_path = self.get_env_file_path(service_name, tag)
+        env_file_path = os.path.join(self.updates_dir, f"{service_name}_{tag}.env")
 
         try:
             with open(env_file_path, "w") as f:
