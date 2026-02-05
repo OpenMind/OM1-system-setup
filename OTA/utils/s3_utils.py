@@ -12,14 +12,14 @@ import yaml
 from botocore.exceptions import BotoCoreError, ClientError
 
 SCHEMA_URL_TEMPLATE = "https://assets.openmind.org/ota/{tag}/schema.json"
-SCHEMA_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".ota")
 
 
 class S3FileDownloader:
     """Utility class for downloading files from S3 and verifying checksums."""
 
-    def __init__(self):
+    def __init__(self, updates_dir=".ota"):
         self.logger = logging.getLogger(__name__)
+        self.updates_dir = os.path.abspath(updates_dir)
         try:
             self.s3_client = boto3.client("s3")
         except Exception as e:
@@ -245,9 +245,9 @@ class S3FileDownloader:
         """
         Download schema JSON from S3 and save to local cache.
         """
-        os.makedirs(SCHEMA_CACHE_DIR, exist_ok=True)
+        os.makedirs(self.updates_dir, exist_ok=True)
         schema_url = SCHEMA_URL_TEMPLATE.format(tag=tag)
-        cache_path = os.path.join(SCHEMA_CACHE_DIR, f"{tag}_schema.json")
+        cache_path = os.path.join(self.updates_dir, f"{tag}_schema.json")
 
         local_path = self.download_file_from_s3_url(schema_url, cache_path)
         if not local_path:
@@ -266,7 +266,7 @@ class S3FileDownloader:
         """
         Get default env values from cached schema.
         """
-        cache_path = os.path.join(SCHEMA_CACHE_DIR, f"{tag}_schema.json")
+        cache_path = os.path.join(self.updates_dir, f"{tag}_schema.json")
         if not os.path.exists(cache_path):
             return {}
 
@@ -287,7 +287,7 @@ class S3FileDownloader:
         """
         Get valid env keys for a service by matching image name.
         """
-        cache_path = os.path.join(SCHEMA_CACHE_DIR, f"{tag}_schema.json")
+        cache_path = os.path.join(self.updates_dir, f"{tag}_schema.json")
         if not os.path.exists(cache_path):
             return []
 
