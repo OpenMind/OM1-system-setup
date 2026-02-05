@@ -122,13 +122,15 @@ class AgentOTA(BaseOTA):
         """
         s3_downloader = S3FileDownloader()
         schema_env_keys = s3_downloader.get_schema_env_keys(image_name)
-        return {
-            k: v
-            for env in env_list
-            if "=" in env
-            for k, v in [env.split("=", 1)]
-            if k in schema_env_keys
-        }
+
+        result: dict[str, str] = {}
+        for env in env_list:
+            if "=" not in env:
+                continue
+            key, value = env.split("=", 1)
+            if key in schema_env_keys:
+                result[key] = value
+        return result
 
     def _get_container_env_vars(
         self, container_name: str, image_name: str
