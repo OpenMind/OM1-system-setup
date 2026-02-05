@@ -164,7 +164,7 @@ class ActionHandlers:
                     self.progress_reporter.send_progress_update("error", error_msg, 10)
                     return
 
-            tag = self._extract_tag_from_yaml(yaml_content)
+            tag = self._extract_tag_from_yaml(yaml_content)  # type: ignore
             s3_downloader = S3FileDownloader()
             s3_downloader.download_schema()
             env_variables = data.get("env_variables")
@@ -172,7 +172,7 @@ class ActionHandlers:
                 env_variables = s3_downloader.get_default_env(service_name, tag)
             self.file_manager.update_env_file(service_name, tag, env_variables)
 
-            start_result = self.docker_manager.start_docker_services(yaml_content)
+            start_result = self.docker_manager.start_docker_services(yaml_content)  # type: ignore
 
             if start_result.get("success"):
                 logging.info(f"Successfully started service: {service_name}")
