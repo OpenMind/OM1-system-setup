@@ -1,4 +1,5 @@
 import hashlib
+import json
 import logging
 import os
 import tempfile
@@ -10,12 +11,16 @@ import requests
 import yaml
 from botocore.exceptions import BotoCoreError, ClientError
 
+SCHEMA_URL_TEMPLATE = "https://assets.openmind.org/ota/{tag}/schema.json"
+
 
 class S3FileDownloader:
     """Utility class for downloading files from S3 and verifying checksums."""
 
-    def __init__(self):
+    def __init__(self, updates_dir=".ota"):
         self.logger = logging.getLogger(__name__)
+        self.updates_dir = os.path.abspath(updates_dir)
+        os.makedirs(self.updates_dir, mode=0o755, exist_ok=True)
         try:
             self.s3_client = boto3.client("s3")
         except Exception as e:
@@ -236,3 +241,64 @@ class S3FileDownloader:
             )
             os.unlink(local_path)
             return None, None
+
+    def download_schema(self, tag: str) -> Optional[dict]:
+        """
+        Download schema JSON from S3 and save to local cache.
+        """
+        schema_url = SCHEMA_URL_TEMPLATE.format(tag=tag)
+        cache_path = os.path.join(self.updates_dir, f"{tag}_schema.json")
+
+        local_path = self.download_file_from_s3_url(schema_url, cache_path)
+        if not local_path:
+            return None
+
+        try:
+            with open(cache_path, "r") as f:
+                schema = json.load(f)
+            self.logger.info(f"Downloaded and cached schema to {cache_path}")
+            return schema
+        except Exception as e:
+            self.logger.error(f"Failed to parse schema: {e}")
+            return None
+
+    def get_default_env(self, service_name: str, tag: str) -> dict[str, str]:
+        """
+        Get default env values from cached schema.
+        """
+        cache_path = os.path.join(self.updates_dir, f"{tag}_schema.json")
+        if not os.path.exists(cache_path):
+            return {}
+
+        try:
+            with open(cache_path, "r") as f:
+                schema = json.load(f)
+            env = schema.get(service_name, {}).get("env", {})
+            if env:
+                self.logger.info(
+                    f"Using schema defaults for {service_name}/{tag}: {env}"
+                )
+            return env
+        except Exception as e:
+            self.logger.error(f"Failed to read schema cache: {e}")
+            return {}
+
+    def get_schema_env_keys(self, tag: str, image_name: str) -> list[str]:
+        """
+        Get valid env keys for a service by matching image name.
+        """
+        cache_path = os.path.join(self.updates_dir, f"{tag}_schema.json")
+        if not os.path.exists(cache_path):
+            return []
+
+        try:
+            with open(cache_path, "r") as f:
+                schema = json.load(f)
+
+            for service in schema.values():
+                if service.get("image") == image_name:
+                    return list(service.get("env", {}).keys())
+            return []
+        except Exception as e:
+            self.logger.error(f"Failed to read schema cache: {e}")
+            return []

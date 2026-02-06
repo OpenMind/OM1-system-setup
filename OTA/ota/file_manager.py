@@ -140,3 +140,23 @@ class FileManager:
         except OSError as e:
             logging.warning(f"Failed to clean up file {file_path}: {e}")
             return False
+
+    def update_env_file(
+        self, service_name: str, tag: str, variables: dict[str, str]
+    ) -> dict[str, Any]:
+        """
+        Update environment variables to a service's env file.
+        """
+        env_file_path = os.path.join(self.updates_dir, f"{service_name}_{tag}.env")
+
+        try:
+            with open(env_file_path, "w") as f:
+                for key, value in variables.items():
+                    f.write(f"{key}={value}\n")
+
+            logging.info(f"Wrote env file for {service_name} {tag}: {env_file_path}")
+            return {"success": True, "file_path": env_file_path}
+        except Exception as e:
+            error_msg = f"Failed to write env file {env_file_path}: {e}"
+            logging.error(error_msg)
+            return {"success": False, "error": error_msg}

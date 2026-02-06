@@ -72,6 +72,12 @@ class ActionHandlers:
             )
             logging.info(f"YAML content: {yaml_content}")
 
+            s3_downloader.download_schema(tag)
+            env_variables = data.get("env_variables")
+            if env_variables is None:
+                env_variables = s3_downloader.get_default_env(service_name, tag)
+            self.file_manager.update_env_file(service_name, tag, env_variables)
+
             self.apply_ota_update(service_name, yaml_content, local_file_path, tag)
 
             self.file_manager.cleanup_temp_file(local_file_path)
@@ -157,6 +163,14 @@ class ActionHandlers:
                     logging.error(error_msg)
                     self.progress_reporter.send_progress_update("error", error_msg, 10)
                     return
+
+            tag = self._extract_tag_from_yaml(yaml_content)  # type: ignore
+            s3_downloader = S3FileDownloader()
+            s3_downloader.download_schema(tag)
+            env_variables = data.get("env_variables")
+            if env_variables is None:
+                env_variables = s3_downloader.get_default_env(service_name, tag)
+            self.file_manager.update_env_file(service_name, tag, env_variables)
 
             start_result = self.docker_manager.start_docker_services(yaml_content)  # type: ignore
 
@@ -396,3 +410,17 @@ class ActionHandlers:
             logging.error(error_msg)
             self.progress_reporter.send_progress_update("error", error_msg, 0)
             return False
+
+    def _extract_tag_from_yaml(self, yaml_content: dict) -> str:
+        """
+        Extract tag from the image name in yaml_content.
+        """
+        try:
+            services = yaml_content.get("services", {})
+            service = next(iter(services.values()), {})
+            image = service.get("image", "")
+            if ":" in image:
+                return image.split(":")[-1]
+            return "latest"
+        except Exception:
+            return "latest"
