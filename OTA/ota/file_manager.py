@@ -154,7 +154,7 @@ class FileManager:
                 for key, value in variables.items():
                     f.write(f"{key}={value}\n")
 
-            logging.info(f"Wrote env file: {env_file_path}")
+            logging.info(f"Wrote env file for {service_name} {tag}: {env_file_path}")
             return {"success": True, "file_path": env_file_path}
         except Exception as e:
             error_msg = f"Failed to write env file {env_file_path}: {e}"
