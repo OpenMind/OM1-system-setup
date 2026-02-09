@@ -372,6 +372,25 @@ class DockerManager:
                 "output": "\n".join(stdout_lines) if "stdout_lines" in locals() else "",
             }
 
+    def _load_env_from_yaml(self, yaml_content: dict) -> dict:
+        """
+        Read env_file paths from yaml_content and load variables.
+        """
+        env = os.environ.copy()
+        for service_config in yaml_content.get("services", {}).values():
+            env_files = service_config.get("env_file", [])
+            if isinstance(env_files, str):
+                env_files = [env_files]
+            for path in env_files:
+                if os.path.exists(path):
+                    with open(path) as f:
+                        for line in f:
+                            line = line.strip()
+                            if line and not line.startswith("#") and "=" in line:
+                                key, val = line.split("=", 1)
+                                env[key.strip()] = val.strip()
+        return env
+
     def start_docker_services(self, yaml_content: dict) -> dict:
         """
         Start Docker containers/services based on the update configuration.
@@ -429,11 +448,13 @@ class DockerManager:
                     "-d",
                     "--no-build",
                 ]
+                env = self._load_env_from_yaml(yaml_content)
                 up_result = subprocess.run(
                     up_cmd,
                     capture_output=True,
                     text=True,
                     timeout=120,  # 2 minutes timeout for starting
+                    env=env,
                 )
 
                 if up_result.returncode == 0:
