@@ -56,6 +56,7 @@ class AgentOTA(BaseOTA):
             "qwen30b_quantized": "Qwen 30B quantized model container for local AI processing",
             "kokoro_tts": "Kokoro TTS container for text-to-speech functionalities",
             "riva_speech": "NVIDIA Riva Speech container for advanced speech processing",
+            "person_following": "Person Following container for managing person following capabilities",
         }
 
         self.container_info_thread: Optional[threading.Thread] = None
