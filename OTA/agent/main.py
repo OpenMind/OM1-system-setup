@@ -11,7 +11,7 @@ import requests
 
 from ..ota import BaseOTA
 from ..ota.file_manager import FileManager
-
+from ..utils.s3_utils import S3FileDownloader
 OTA_AGENT_SERVER_URL = os.getenv(
     "OTA_AGENT_SERVER_URL", "wss://api.openmind.org/api/core/ota/agent"
 )
@@ -115,11 +115,29 @@ class AgentOTA(BaseOTA):
             logging.warning(f"Failed to get SHA256 for image {image_name}: {e}")
             return "unknown"
 
+    def _filter_env_by_schema(
+        self, env_dict: dict[str, str], image_name: str
+    ) -> dict[str, str]:
+        """
+        Filter environment variables by schema keys.
+        """
+        tag = image_name.split(":")[-1] if ":" in image_name else "latest"
+
+        s3_downloader = S3FileDownloader()
+        schema_env_keys = s3_downloader.get_schema_env_keys(tag, image_name)
+
+        result: dict[str, str] = {}
+        for key, value in env_dict.items():
+            if key in schema_env_keys:
+                result[key] = value
+        return result
+
     def _get_container_env_vars(
         self, container_name: str, image_name: str
     ) -> dict[str, str]:
         """
-        Get environment variables from the service's .env file.
+        Get environment variables from the service's .env file,
+        filtered by schema.
 
         Parameters
         ----------
@@ -135,7 +153,8 @@ class AgentOTA(BaseOTA):
         """
         file_manager = FileManager()
         tag = image_name.split(":")[-1] if ":" in image_name else "latest"
-        return file_manager.read_env_file(container_name, tag)
+        raw_env_dict = file_manager.read_env_file(container_name, tag)
+        return self._filter_env_by_schema(raw_env_dict, image_name)
 
     def _fetch_docker_info(self):
         """

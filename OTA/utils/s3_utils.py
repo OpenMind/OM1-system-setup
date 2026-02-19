@@ -282,3 +282,23 @@ class S3FileDownloader:
         except Exception as e:
             self.logger.error(f"Failed to read schema cache: {e}")
             return {}
+
+    def get_schema_env_keys(self, tag: str, image_name: str) -> list[str]:
+        """
+        Get valid env keys for a service by matching image name.
+        """
+        cache_path = os.path.join(self.updates_dir, f"{tag}_schema.json")
+        if not os.path.exists(cache_path):
+            return []
+
+        try:
+            with open(cache_path, "r") as f:
+                schema = json.load(f)
+
+            for service in schema.values():
+                if service.get("image") == image_name:
+                    return list(service.get("env", {}).keys())
+            return []
+        except Exception as e:
+            self.logger.error(f"Failed to read schema cache: {e}")
+            return []
