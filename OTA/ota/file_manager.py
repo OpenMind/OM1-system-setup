@@ -160,3 +160,52 @@ class FileManager:
             error_msg = f"Failed to write env file {env_file_path}: {e}"
             logging.error(error_msg)
             return {"success": False, "error": error_msg}
+
+    def _parse_env_file(self, path: str) -> dict[str, str]:
+        """
+        Parse KEY=VALUE lines from an env file.
+
+        Parameters
+        ----------
+        path : str
+            Path to the env file
+
+        Returns
+        -------
+        dict[str, str]
+            Dictionary of environment variables
+        """
+        result: dict[str, str] = {}
+        if not os.path.exists(path):
+            return result
+
+        try:
+            with open(path, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and "=" in line:
+                        key, value = line.split("=", 1)
+                        result[key] = value
+        except Exception as e:
+            logging.warning(f"Failed to parse env file {path}: {e}")
+
+        return result
+
+    def read_env_file(self, service_name: str, tag: str) -> dict[str, str]:
+        """
+        Read env vars from a service's env file.
+
+        Parameters
+        ----------
+        service_name : str
+            The name of the service
+        tag : str
+            The version tag
+
+        Returns
+        -------
+        dict[str, str]
+            Dictionary of environment variables
+        """
+        env_file_path = os.path.join(self.updates_dir, f"{service_name}_{tag}.env")
+        return self._parse_env_file(env_file_path)
