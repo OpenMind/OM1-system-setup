@@ -10,6 +10,7 @@ from typing import Optional
 import requests
 
 from ..ota import BaseOTA
+from ..ota.file_manager import FileManager
 from ..utils.s3_utils import S3FileDownloader
 
 OTA_AGENT_SERVER_URL = os.getenv(
@@ -116,7 +117,7 @@ class AgentOTA(BaseOTA):
             return "unknown"
 
     def _filter_env_by_schema(
-        self, env_list: list[str], image_name: str
+        self, env_dict: dict[str, str], image_name: str
     ) -> dict[str, str]:
         """
         Filter environment variables by schema keys.
@@ -127,8 +128,7 @@ class AgentOTA(BaseOTA):
         schema_env_keys = s3_downloader.get_schema_env_keys(tag, image_name)
 
         result: dict[str, str] = {}
-        for env in env_list:
-            key, value = env.split("=", 1)
+        for key, value in env_dict.items():
             if key in schema_env_keys:
                 result[key] = value
         return result
@@ -137,44 +137,25 @@ class AgentOTA(BaseOTA):
         self, container_name: str, image_name: str
     ) -> dict[str, str]:
         """
-        Get filtered environment variables of a running Docker container.
+        Get environment variables from the service's .env file,
+        filtered by schema.
 
         Parameters
         ----------
         container_name : str
             The name of the Docker container
         image_name : str
-            The name of the Docker image
+            The name of the Docker image (used to extract tag)
 
         Returns
         -------
         dict[str, str]
             Dictionary of environment variables
         """
-        try:
-            cmd = [
-                "docker",
-                "inspect",
-                container_name,
-                "--format",
-                "{{json .Config.Env}}",
-            ]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-
-            if result.returncode == 0 and result.stdout.strip():
-                env_list = json.loads(result.stdout.strip())
-                if isinstance(env_list, list):
-                    return self._filter_env_by_schema(env_list, image_name)
-            return {}
-        except (
-            subprocess.TimeoutExpired,
-            FileNotFoundError,
-            json.JSONDecodeError,
-        ) as e:
-            logging.warning(
-                f"Failed to get env vars for container {container_name}: {e}"
-            )
-            return {}
+        file_manager = FileManager()
+        tag = image_name.split(":")[-1] if ":" in image_name else "latest"
+        raw_env_dict = file_manager.read_env_file(container_name, tag)
+        return self._filter_env_by_schema(raw_env_dict, image_name)
 
     def _fetch_docker_info(self):
         """
@@ -285,7 +266,9 @@ class AgentOTA(BaseOTA):
                     "command": "",
                     "id": "",
                     "present": False,
-                    "env_variables": [],
+                    "env_variables": self._get_container_env_vars(
+                        missing_container, "unknown"
+                    ),
                 }
                 logging.warning(
                     f"Container '{missing_container}' is missing from local Docker"
