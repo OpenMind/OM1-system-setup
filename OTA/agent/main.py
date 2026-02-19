@@ -246,7 +246,9 @@ class AgentOTA(BaseOTA):
                     "command": "",
                     "id": "",
                     "present": False,
-                    "env_variables": {},
+                    "env_variables": self._get_container_env_vars(
+                        missing_container, "unknown"
+                    ),
                 }
                 logging.warning(
                     f"Container '{missing_container}' is missing from local Docker"
