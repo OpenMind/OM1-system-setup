@@ -137,8 +137,7 @@ class AgentOTA(BaseOTA):
         self, container_name: str, image_name: str
     ) -> dict[str, str]:
         """
-        Get environment variables from the service's .env file,
-        filtered by schema.
+        Get environment variables by combining docker inspect and .env file.
 
         Parameters
         ----------
@@ -150,12 +149,43 @@ class AgentOTA(BaseOTA):
         Returns
         -------
         dict[str, str]
-            Dictionary of environment variables
+            Combined environment variables
         """
-        file_manager = FileManager()
         tag = image_name.split(":")[-1] if ":" in image_name else "latest"
-        raw_env_dict = file_manager.read_env_file(container_name, tag)
-        return self._filter_env_by_schema(raw_env_dict, image_name)
+
+        container_env: dict[str, str] = {}
+        try:
+            cmd = [
+                "docker",
+                "inspect",
+                container_name,
+                "--format",
+                "{{json .Config.Env}}",
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            if result.returncode == 0 and result.stdout.strip():
+                env_list = json.loads(result.stdout.strip())
+                if isinstance(env_list, list):
+                    for item in env_list:
+                        if "=" in item:
+                            k, v = item.split("=", 1)
+                            container_env[k] = v
+        except (
+            subprocess.TimeoutExpired,
+            FileNotFoundError,
+            json.JSONDecodeError,
+        ) as e:
+            logging.warning(
+                f"Failed to get env vars via docker inspect for {container_name}: {e}"
+            )
+
+        container_env = self._filter_env_by_schema(container_env, image_name)
+
+        file_manager = FileManager()
+        file_env = file_manager.read_env_file(container_name, tag)
+
+        result = {**file_env, **container_env}
+        return result
 
     def _fetch_docker_info(self):
         """
