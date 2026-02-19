@@ -150,11 +150,8 @@ class FileManager:
         env_file_path = os.path.join(self.updates_dir, f"{service_name}_{tag}.env")
 
         try:
-            existing_vars = self._parse_env_file(env_file_path)
-            existing_vars.update(variables)
-
             with open(env_file_path, "w") as f:
-                for key, value in existing_vars.items():
+                for key, value in variables.items():
                     f.write(f"{key}={value}\n")
 
             logging.info(f"Wrote env file for {service_name} {tag}: {env_file_path}")
