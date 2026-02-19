@@ -12,6 +12,7 @@ import requests
 from ..ota import BaseOTA
 from ..ota.file_manager import FileManager
 from ..utils.s3_utils import S3FileDownloader
+
 OTA_AGENT_SERVER_URL = os.getenv(
     "OTA_AGENT_SERVER_URL", "wss://api.openmind.org/api/core/ota/agent"
 )
