@@ -297,7 +297,7 @@ class AgentOTA(BaseOTA):
                     "id": "",
                     "present": False,
                     "env_variables": self._get_container_env_vars(
-                        missing_container, "unknown"
+                        missing_container, "latest"
                     ),
                 }
                 logging.warning(
