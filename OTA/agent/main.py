@@ -58,6 +58,7 @@ class AgentOTA(BaseOTA):
             "kokoro_tts": "Kokoro TTS container for text-to-speech functionalities",
             "riva_speech": "NVIDIA Riva Speech container for advanced speech processing",
             "person_following": "Person Following container for managing person following capabilities",
+            "text_embedding": "Text Embedding container for generating text embeddings for AI processing",
         }
 
         self.container_info_thread: Optional[threading.Thread] = None
