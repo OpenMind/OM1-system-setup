@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["OTA*", "WIFI*"]
+include = ["OTA*"]
 
 [dependency-groups]
 dev = [
@@ -53,13 +53,13 @@ extend-exclude = '''
 profile = "black"
 multi_line_output = 3
 line_length = 88
-known_first_party = ["OTA", "WIFI"]
+known_first_party = ["OTA"]
 known_third_party = ["flask", "requests", "boto3", "websockets"]
 
 [tool.ruff]
 line-length = 88
 indent-width = 4
-src = ["OTA", "WIFI"]
+src = ["OTA"]
 exclude = ["__pycache__", "*.pyc", "build", "dist", ".git"]
 
 [tool.ruff.lint]
