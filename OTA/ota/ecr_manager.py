@@ -80,6 +80,13 @@ class ECRManager:
             return False
 
         creds = self._credentials
+        if not creds:
+            logging.error("ECR credentials response was empty")
+            self.progress_reporter.send_progress_update(
+                "error", "ECR credentials response was empty", 15
+            )
+            return False
+
         login_ok = self.docker_manager.login_docker_ecr(
             registry=creds.get("registry", ""),
             username=creds.get("username", ""),

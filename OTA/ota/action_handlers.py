@@ -166,6 +166,12 @@ class ActionHandlers:
                     self.progress_reporter.send_progress_update("error", error_msg, 10)
                     return
 
+            if not isinstance(yaml_content, dict):
+                error_msg = f"Invalid YAML content for service {service_name}"
+                logging.error(error_msg)
+                self.progress_reporter.send_progress_update("error", error_msg, 10)
+                return
+
             tag = self._extract_tag_from_yaml(yaml_content)  # type: ignore
             s3_downloader = S3FileDownloader()
             s3_downloader.download_schema(tag)
