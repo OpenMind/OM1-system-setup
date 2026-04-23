@@ -1,5 +1,6 @@
 import json
 import logging
+import threading
 from typing import Callable, Optional
 
 from ..utils.ws_client import WebSocketClient
@@ -45,6 +46,7 @@ class BaseOTA:
 
         self.ws_client = self.create_ws_client()
         self.progress_reporter.set_ws_client(self.ws_client)
+        self.action_handlers.ecr_manager.set_ws_send(self.ws_client.send_message)
 
         self.ota_process_callback: Optional[Callable] = None
 
@@ -81,16 +83,12 @@ class BaseOTA:
                 data = json.loads(message)
                 logging.info(f"Processing OTA data: {data}")
 
-                if data.get("type") == "ecr_credentials":
-                    cred_data = data.get("data", {})
-                    self.docker_manager.login_docker_ecr(
-                        registry=cred_data.get("registry", ""),
-                        username=cred_data.get("username", ""),
-                        password=cred_data.get("password", ""),
-                    )
-                    logging.info(
-                        f"ECR credentials refreshed, expires at {cred_data.get('expires_at')}"
-                    )
+                msg_type = data.get("type")
+                if msg_type == "ecr_credentials":
+                    self.action_handlers.ecr_manager.on_credentials_received(data.get("data", {}))
+                    return
+                if msg_type == "ecr_credentials_error":
+                    self.action_handlers.ecr_manager.on_credentials_error(data.get("error", "unknown"))
                     return
 
                 action = data.get("action")
@@ -99,7 +97,6 @@ class BaseOTA:
                 if not action:
                     logging.error("Invalid OTA message: missing action")
                     return
-
                 if not service_name:
                     logging.error("Invalid OTA message: missing service_name")
                     return
@@ -107,11 +104,17 @@ class BaseOTA:
                 logging.info(f"Processing {action} action for service: {service_name}")
 
                 if action == "upgrade":
-                    self.action_handlers.handle_upgrade_action(data, service_name)
+                    threading.Thread(
+                        target=self.action_handlers.handle_upgrade_action,
+                        args=(data, service_name), daemon=True
+                    ).start()
                 elif action == "stop":
                     self.action_handlers.handle_stop_action(data, service_name)
                 elif action == "start":
-                    self.action_handlers.handle_start_action(data, service_name)
+                    threading.Thread(
+                        target=self.action_handlers.handle_start_action,
+                        args=(data, service_name), daemon=True
+                    ).start()
                 elif action == "pause":
                     self.action_handlers.handle_pause_action(data, service_name)
                 elif action == "unpause":
