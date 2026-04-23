@@ -1,6 +1,5 @@
 import json
 import logging
-import threading
 from typing import Callable, Optional
 
 from ..utils.ws_client import WebSocketClient
@@ -95,19 +94,11 @@ class BaseOTA:
                 logging.info(f"Processing {action} action for service: {service_name}")
 
                 if action == "upgrade":
-                    threading.Thread(
-                        target=self.action_handlers.handle_upgrade_action,
-                        args=(data, service_name),
-                        daemon=True,
-                    ).start()
+                    self.action_handlers.handle_upgrade_action(data, service_name)
                 elif action == "stop":
                     self.action_handlers.handle_stop_action(data, service_name)
                 elif action == "start":
-                    threading.Thread(
-                        target=self.action_handlers.handle_start_action,
-                        args=(data, service_name),
-                        daemon=True,
-                    ).start()
+                    self.action_handlers.handle_start_action(data, service_name)
                 elif action == "pause":
                     self.action_handlers.handle_pause_action(data, service_name)
                 elif action == "unpause":
