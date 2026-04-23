@@ -46,7 +46,6 @@ class BaseOTA:
 
         self.ws_client = self.create_ws_client()
         self.progress_reporter.set_ws_client(self.ws_client)
-        self.action_handlers.ecr_manager.set_ws_send(self.ws_client.send_message)
 
         self.ota_process_callback: Optional[Callable] = None
 
@@ -82,18 +81,6 @@ class BaseOTA:
             try:
                 data = json.loads(message)
                 logging.info(f"Processing OTA data: {data}")
-
-                msg_type = data.get("type")
-                if msg_type == "ecr_credentials":
-                    self.action_handlers.ecr_manager.on_credentials_received(
-                        data.get("data", {})
-                    )
-                    return
-                if msg_type == "ecr_credentials_error":
-                    self.action_handlers.ecr_manager.on_credentials_error(
-                        data.get("error", "unknown")
-                    )
-                    return
 
                 action = data.get("action")
                 service_name = data.get("service_name")

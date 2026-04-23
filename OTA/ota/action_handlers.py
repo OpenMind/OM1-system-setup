@@ -2,7 +2,7 @@ import logging
 
 from ..utils.s3_utils import S3FileDownloader
 from .docker_operations import DockerManager
-from .ecr_manager import ECRManager
+from .ecr_handler import ECRHandler
 from .file_manager import FileManager
 from .progress_reporter import ProgressReporter
 
@@ -33,7 +33,7 @@ class ActionHandlers:
         self.docker_manager = docker_manager
         self.progress_reporter = progress_reporter
         self.file_manager = file_manager
-        self.ecr_manager = ECRManager(docker_manager, progress_reporter)
+        self.ecr_handler = ECRHandler(docker_manager, progress_reporter)
 
     def handle_upgrade_action(self, data: dict, service_name: str = ""):
         """
@@ -180,7 +180,7 @@ class ActionHandlers:
                 env_variables = s3_downloader.get_default_env(service_name, tag)
             self.file_manager.update_env_file(service_name, tag, env_variables)
 
-            if not self.ecr_manager.login_if_needed(yaml_content):
+            if not self.ecr_handler.login_if_needed(yaml_content):
                 return
 
             start_result = self.docker_manager.start_docker_services(yaml_content)  # type: ignore
@@ -389,7 +389,7 @@ class ActionHandlers:
                 self.progress_reporter.send_progress_update("error", error_msg, 10)
                 return False
 
-            if not self.ecr_manager.login_if_needed(yaml_content):
+            if not self.ecr_handler.login_if_needed(yaml_content):
                 return False
 
             self.progress_reporter.send_progress_update(

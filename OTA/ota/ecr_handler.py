@@ -1,15 +1,21 @@
-import json
 import logging
-import threading
+import os
+
+import requests
 
 from .docker_operations import DockerManager
 from .progress_reporter import ProgressReporter
 
 logging.basicConfig(level=logging.INFO)
 
+ECR_CREDENTIALS_URL = os.getenv(
+    "ECR_CREDENTIALS_URL", "https://api.openmind.com/api/core/v1/ota/ecr/credentials"
+)
+OM_API_KEY = os.getenv("OM_API_KEY")
 
-class ECRManager:
-    """Manages ECR credential requests and docker login for private images."""
+
+class ECRHandler:
+    """Handles ECR credential requests and docker login for private images."""
 
     def __init__(
         self,
@@ -18,14 +24,6 @@ class ECRManager:
     ):
         self.docker_manager = docker_manager
         self.progress_reporter = progress_reporter
-        self._ws_send = None
-        self._event = threading.Event()
-        self._credentials: dict | None = None
-        self._error: str | None = None
-
-    def set_ws_send(self, ws_send):
-        """Set the WebSocket send function for credential requests."""
-        self._ws_send = ws_send
 
     def is_private_ecr(self, yaml_content: dict) -> str | None:
         """Return ECR repo name if any service uses a private ECR image, else None."""
@@ -47,45 +45,49 @@ class ECRManager:
         ecr_image = self.is_private_ecr(yaml_content)
         if not ecr_image:
             return True
-        return self._request_credentials_and_login(ecr_image)
+        return self._fetch_credentials_and_login(ecr_image)
 
-    def _request_credentials_and_login(self, image: str) -> bool:
-        """Send WS request, block until credentials received, docker login."""
-        if not self._ws_send:
-            logging.error("No WS send function configured for ECR")
+    def _fetch_credentials_and_login(self, image: str) -> bool:
+        """Fetch ECR credentials via HTTP and perform docker login."""
+        if not ECR_CREDENTIALS_URL or not OM_API_KEY:
+            logging.error("ECR_CREDENTIALS_URL or OM_API_KEY not configured")
+            self.progress_reporter.send_progress_update(
+                "error", "ECR credentials endpoint not configured", 15
+            )
             return False
-
-        self._event.clear()
-        self._credentials = None
-        self._error = None
 
         self.progress_reporter.send_progress_update(
             "authenticating", "Requesting ECR credentials", 15
         )
-        self._ws_send(json.dumps({"type": "ecr_credentials_request", "image": image}))
-        logging.info(f"Sent ECR credentials request for: {image}")
 
-        if not self._event.wait(timeout=60):
-            logging.error("ECR credentials request timed out")
+        try:
+            resp = requests.post(
+                ECR_CREDENTIALS_URL,
+                headers={
+                    "x-api-key": OM_API_KEY,
+                    "Content-Type": "application/json",
+                },
+                json={"image": image},
+                timeout=30,
+            )
+        except requests.RequestException as e:
+            logging.error(f"ECR credentials request failed: {e}")
             self.progress_reporter.send_progress_update(
-                "error", "ECR credentials request timed out", 15
+                "error", f"ECR credentials request failed: {e}", 15
             )
             return False
 
-        if self._error:
-            logging.error(f"ECR credentials error: {self._error}")
+        if not resp.ok:
+            error_detail = (
+                resp.json().get("error", resp.text) if resp.text else "unknown"
+            )
+            logging.error(f"ECR credentials error ({resp.status_code}): {error_detail}")
             self.progress_reporter.send_progress_update(
-                "error", f"ECR credentials error: {self._error}", 15
+                "error", f"ECR credentials error: {error_detail}", 15
             )
             return False
 
-        creds = self._credentials
-        if not creds:
-            logging.error("ECR credentials response was empty")
-            self.progress_reporter.send_progress_update(
-                "error", "ECR credentials response was empty", 15
-            )
-            return False
+        creds = resp.json()
 
         login_ok = self.docker_manager.login_docker_ecr(
             registry=creds.get("registry", ""),
@@ -101,13 +103,3 @@ class ECRManager:
 
         logging.info(f"ECR login succeeded, expires at {creds.get('expires_at')}")
         return True
-
-    def on_credentials_received(self, credentials: dict):
-        """Called when ECR credentials response arrives via WS."""
-        self._credentials = credentials
-        self._event.set()
-
-    def on_credentials_error(self, error: str):
-        """Called when ECR credentials error arrives via WS."""
-        self._error = error
-        self._event.set()
