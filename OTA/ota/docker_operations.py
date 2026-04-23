@@ -398,7 +398,7 @@ class DockerManager:
                     error_msg = "This service requires an Enterprise plan for private image access. Please upgrade your plan at https://portal.openmind.com"
                 else:
                     error_msg = (
-                        f"Pull failed with return code {return_code}: {stderr_text}"
+                        f"Pull failed with return code {return_code}: {stdout_text}"
                     )
                 logging.error(error_msg)
                 return {
