@@ -409,13 +409,13 @@ class DockerManager:
                 }
 
         except subprocess.TimeoutExpired:
-            process.kill()
+            process.kill()  # pyright: ignore
             error_msg = "Docker pull operation timed out"
             logging.error(error_msg)
             return {
                 "success": False,
                 "error": error_msg,
-                "output": "\n".join(stdout_lines) if "stdout_lines" in locals() else "",
+                "output": "\n".join(stdout_lines) if "stdout_lines" in locals() else "",  # pyright: ignore
             }
         except Exception as e:
             error_msg = f"Error during pull operation: {e}"
@@ -423,7 +423,7 @@ class DockerManager:
             return {
                 "success": False,
                 "error": error_msg,
-                "output": "\n".join(stdout_lines) if "stdout_lines" in locals() else "",
+                "output": "\n".join(stdout_lines) if "stdout_lines" in locals() else "",  # pyright: ignore
             }
 
     def start_docker_services(self, yaml_content: dict) -> dict:

@@ -25,8 +25,10 @@ class ECRHandler:
         self.docker_manager = docker_manager
         self.progress_reporter = progress_reporter
 
-    def check_image_privacy(self, yaml_content: dict) -> str | None:
+    def check_image_privacy(self, yaml_content: dict | None) -> str | None:
         """Return ECR repo name if any service uses a private ECR image, else None."""
+        if not yaml_content:
+            return None
         for svc in yaml_content.get("services", {}).values():
             image = svc.get("image", "")
             if ".dkr.ecr." in image:
