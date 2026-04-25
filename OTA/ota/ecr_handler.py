@@ -28,7 +28,7 @@ class ECRHandler:
         Parameters
         ----------
         docker_manager : DockerManager
-            Manager for executing Docker CLI commands
+            Manager for executing Docker commands
         progress_reporter : ProgressReporter
             Reporter for sending progress updates
         """
